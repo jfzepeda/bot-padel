@@ -1,0 +1,6 @@
+Qué deseas hacer?
+
+1. Menú de reservas 📅
+2. Nuestros servicios 🛎️
+3. Dónde estamos 📍
+4. Nuestra web 🌐
