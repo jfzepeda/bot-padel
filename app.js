@@ -359,32 +359,6 @@ const flowServicios = addKeyword(['Servicios', 'servicios'])
     //     media: "https://lh5.googleusercontent.com/p/AF1QipPbmxVtZGjpqI9AEPJc0oPNkRYdIDKtaiRI7LJV=w1200-h642-p-k-no"
     // })
 
-const flowWelcome = addKeyword(EVENTS.WELCOME)
-    .addAnswer("🎾 ¡Hola bienvenido a\nColima Padel Club! 🎾")
-    // .addAnswer("🎾 ¡Hola bienvenido a\n Hi Padel Club! 🎾")
-    .addAnswer(menu,
-    { delay: 500, capture: true },
-    async (ctx, {gotoFlow, fallBack, flowDynamic }) => {
-
-        switch (ctx.body) {
-            case "1":
-                return gotoFlow(flowMenu);
-            case "2":
-                return gotoFlow(flowServicios);
-            case '3':
-            case 'Dónde estamos':
-                return await flowDynamic("Calle Ignacio Sandoval 1955, Paseo de La Cantera\n\nSolo haz click aquí 👉  https://maps.app.goo.gl/VtGFSZdAvPH2a6529")
-                // return await flowDynamic("Av. Arquitecto Pedro Ramírez Vázquez 2014, Cd. Guzmán Jal.\n\nSolo haz click aquí 👉  https://maps.app.goo.gl/pq94K1Q14D9MJKo4A")
-            case '4':
-            case 'Web':
-            case 'Nuestra web':
-                return await flowDynamic("¡Eleva tu juego en Colima Padel Club! https://colimapadelclub.com")
-                // return await flowDynamic("Síguenos en instagram 📸👣📱 https://www.instagram.com/hipadelclub/")
-            case "0":
-                return await flowDynamic()
-        }
-    });
-
 const flowMenu = addKeyword(['menu', 'menú']).addAnswer(
     "Este es nuestro menú:\n1. Reservar cancha\n2. Consultar reservas\n3. Confirmar\n4. Cancelar\n\n0. Salir",
     { delay: 500, capture: true },
@@ -407,7 +381,33 @@ const flowMenu = addKeyword(['menu', 'menú']).addAnswer(
                     "Saliendo...Puedes volver a acceder a este menú escribiendo '*Menu*'"
                 );
         }
-    });
+});
+
+const flowWelcome = addKeyword(EVENTS.WELCOME)
+.addAnswer("🎾 ¡Hola bienvenido a\nColima Padel Club! 🎾")
+// .addAnswer("🎾 ¡Hola bienvenido a\n Hi Padel Club! 🎾")
+.addAnswer(menu,
+{ delay: 500, capture: true },
+async (ctx, {gotoFlow, fallBack, flowDynamic }) => {
+
+    switch (ctx.body) {
+        case "1":
+            return gotoFlow(flowMenu);
+        case "2":
+            return gotoFlow(flowServicios);
+        case '3':
+        case 'Dónde estamos':
+            return await flowDynamic("Calle Ignacio Sandoval 1955, Paseo de La Cantera\n\nSolo haz click aquí 👉  https://maps.app.goo.gl/VtGFSZdAvPH2a6529")
+            // return await flowDynamic("Av. Arquitecto Pedro Ramírez Vázquez 2014, Cd. Guzmán Jal.\n\nSolo haz click aquí 👉  https://maps.app.goo.gl/pq94K1Q14D9MJKo4A")
+        case '4':
+        case 'Web':
+        case 'Nuestra web':
+            return await flowDynamic("¡Eleva tu juego en Colima Padel Club! https://colimapadelclub.com")
+            // return await flowDynamic("Síguenos en instagram 📸👣📱 https://www.instagram.com/hipadelclub/")
+        case "0":
+            return await flowDynamic()
+    }
+});
 
 // Creación del bot
 const main = async () => {
