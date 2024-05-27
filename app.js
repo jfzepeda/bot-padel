@@ -363,10 +363,10 @@ const flowMenu = addKeyword(['menu', 'menú']).addAnswer(
     "Este es nuestro menú:\n1. Reservar cancha\n2. Consultar reservas\n3. Confirmar\n4. Cancelar\n\n0. Salir",
     { delay: 500, capture: true },
     async (ctx, {gotoFlow, fallBack, flowDynamic }) => {
-        if (!["1","2","3","4","0"].includes(ctx.body)) {
-            return fallBack(
-                "Respuesta no válida, por favor selecciona una de las opciones.");
-        }
+        // if (!["1","2","3","4","0"].includes(ctx.body)) {
+        //     return fallBack(
+        //         "Respuesta no válida, por favor selecciona una de las opciones.");
+        // }
         switch (ctx.body) {
             case "1":
                 return gotoFlow(flowReservar);
