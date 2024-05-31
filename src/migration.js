@@ -1,4 +1,5 @@
 const { DB_HOST, DB_USER, DB_PASSWORD, DB_PORT, DB_NAME } = require('./config');
+const { reverseISO } = require('./validacion');
 const mysql = require('mysql2/promise');
 const moment = require('moment');
 
@@ -59,7 +60,7 @@ class ReservaCanchaPadel {
                 [this.nombre_cliente, this.cancha, this.dia, this.hora, this.confirmada ? 1 : 0, this.num]
             );
             await connection.end();
-            return "Reserva creada con éxito!";
+            return ["Reserva creada con éxito!", `📆 Dia: ${reverseISO(this.dia)} \n🕑 Hora ${this.hora} \n🥅 Cancha ${this.cancha} \n🗒️ Confirmada ${this.confirmada ? '✅' : '❌'} `];
         } catch (err) {
             await connection.end();
             throw new Error("Error al guardar su reserva: " + err.message);
@@ -112,7 +113,7 @@ class ReservaCanchaPadel {
         }
     }
 
-    static async consultarreservations(columna, arg) {
+    static async consultarReservas(columna, arg) {
         const connection = await getConnection();
         try {
             const [rows] = await connection.execute(
@@ -121,10 +122,12 @@ class ReservaCanchaPadel {
             );
             await connection.end();
             if (rows.length > 0) {
-                let response = `reservations PARA *${rows[0].nombre_cliente}:*\n\n`;
+                // console.log('Dentro de las rows')
+                let response = `RESERVACIONES PARA *${rows[0].nombre_cliente}:*\n\n`;
                 rows.forEach((row) => {
-                    response += `${row.id}. Cancha: ${row.cancha}, Día: ${row.dia}, Hora: ${row.hora}, Confirmada: ${row.confirmada ? 'Sí' : 'No'}\n\n`;
+                    response += `🔘 ${row.id}. \n📆 Dia: ${reverseISO(this.dia)} \n🕑 Hora ${this.hora} \n🥅 Cancha ${this.cancha} \n🗒️ Confirmada ${this.confirmada ? '✅' : '❌'} \n\n`;
                 });
+                console.log(response);
                 return response.trim();
             } else {
                 throw new Error("No hay reservations para " + arg);
@@ -138,6 +141,7 @@ class ReservaCanchaPadel {
 
 // Función para manejar la reserva de una cancha
 async function reservarCancha(nombre_cliente, cancha, dia, hora, num) {
+    console.log('Funcion reservarCancha');
     const disponible = await verificarDisponibilidad(cancha, dia, hora);
     if (disponible) {
         const reserva = new ReservaCanchaPadel(nombre_cliente, cancha, dia, hora, num);

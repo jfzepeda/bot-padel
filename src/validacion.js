@@ -109,7 +109,7 @@ function asignarDia(dateProvided) {
 // CONVERTIR DIA A FECHA ////////////////////////////////
 // CONVERTIR DIA A FECHA ////////////////////////////////
 // CONVERTIR DIA A FECHA ////////////////////////////////
-function asignarFecha(fechaStr) {
+function asignarISOdate(fechaStr) {
     const meses = {
         "enero": "01",
         "febrero": "02",
@@ -141,6 +141,26 @@ function asignarFecha(fechaStr) {
     
     return fechaFormateada;
     
+}
+
+// REVERTIR FECHA ISO ////////////////////////////////
+// REVERTIR FECHA ISO ////////////////////////////////
+// REVERTIR FECHA ISO ////////////////////////////////
+function reverseISO(fechaISO) {
+    // Dividir la fecha en año, mes y día
+    const [year, month, day] = fechaISO.split("-");
+    
+    // Obtener el nombre del mes basado en el número de mes
+    const meses = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
+    const mesNombre = meses[parseInt(month) - 1];
+    
+    // Formatear el día a eliminar ceros a la izquierda
+    const diaFormateado = parseInt(day).toString();
+    
+    // Construir la fecha en el formato deseado
+    const fechaFormateada = `${diaFormateado} de ${mesNombre}`;
+    
+    return fechaFormateada;
 }
 
 // VALIDACION DE HORA ////////////////////////////////
@@ -227,6 +247,6 @@ function asignarCancha(cancha) {
 }
 
 
-// Exportar las funciones asignarHora y asignarFecha
-module.exports = { asignarFecha, asignarDia, asignarHora, asignarCancha };
+// Exportar las funciones asignarHora y asignarISOdate
+module.exports = { asignarDia, asignarISOdate, reverseISO, asignarHora, asignarCancha };
 

@@ -8,7 +8,7 @@ const MockAdapter = require('@bot-whatsapp/database/mock')
 const { registerUser, lookupUser, getBookings, book } = require('./database');
 const { reservarCancha, ReservaCanchaPadel } = require('./migration');
 const { getTime, getGender } = require('./saludos');
-const { asignarHora, asignarDia, asignarFecha, asignarCancha } = require('./validacion');
+const { asignarHora, asignarDia, asignarISOdate, asignarCancha } = require('./validacion');
 
 const path = require("path")
 const fs = require("fs");
@@ -65,7 +65,7 @@ const flowReservar = addKeyword(['reservar', 'rr'])
         if (day.includes('válido')) { 
             return fallBack(day); 
         }
-        date = asignarFecha(day);
+        date = asignarISOdate(day);
         console.log("Fecha asignada", date);
     })
     .addAnswer('A qué hora sería? (6:00 - 22:00 hrs)', 
@@ -88,10 +88,10 @@ const flowReservar = addKeyword(['reservar', 'rr'])
         }
         console.log("Cancha asignada", court);
     })
-    .addAction( { capture: true },
-    async (ctx, { fallBack, flowDynamic }) => {
+    .addAction( async (ctx, { flowDynamic }) => {
         const num = ctx.from;
         court = parseInt(court);
+        nombre = lookupUser(num);
         try {
             const resultado = await reservarCancha(nombre, court, date, hour, num);
             return await flowDynamic(resultado);
@@ -101,18 +101,12 @@ const flowReservar = addKeyword(['reservar', 'rr'])
     });
 
 const flowConsultar = addKeyword(['consultar', 'consulta', 'cons'])
-    .addAnswer('Escriba su nombre o su número de teléfono para consultar:', 
-    { capture: true },
+    .addAnswer('Buscando sus reservas...', {capture: false},
     async (ctx, { gotoFlow, flowDynamic }) => {
-        const res = ctx.body;
         const num = ctx.from;
         try {
-            let resultado;
-            if (true) {
-                resultado = await ReservaCanchaPadel.consultarReservas('numero_telefonico', num);
-            } else {
-                resultado = await ReservaCanchaPadel.consultarReservas('nombre_cliente', res);
-            }
+            const resultado = await ReservaCanchaPadel.consultarReservas('numero_telefonico', num);
+            console.log("Reservas: ", resultado);
             return await flowDynamic(resultado);
         } catch (error) {
             await flowDynamic(error.message);
