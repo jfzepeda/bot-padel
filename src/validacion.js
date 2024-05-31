@@ -226,7 +226,6 @@ function asignarCancha(cancha) {
     }    
 }
 
-console.log(asignarDia('Quiero que me reserves para mañana'));
 
 // Exportar las funciones asignarHora y asignarFecha
 module.exports = { asignarFecha, asignarDia, asignarHora, asignarCancha };
