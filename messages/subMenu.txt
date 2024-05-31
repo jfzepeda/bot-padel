@@ -1,0 +1,6 @@
+1. Consultar mis reservas 🔍
+2. Confirmar mi reserva ✅
+3. Cancelar una reserva ❌
+4. Nuestras redes 📲
+
+0. Volver al menu principal

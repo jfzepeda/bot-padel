@@ -2,11 +2,11 @@
     "name": "base-bailey-memory",
     "version": "1.0.0",
     "description": "",
-    "main": "app.js",
+    "main": "src/app.js",
     "scripts": {
         "prestart": "npx eslint . --no-ignore",
         "pre-copy": "cd .. && npm run  copy.lib base-baileys-memory",
-        "start": "node app.js"
+        "start": "node src/app.js"
     },
     "keywords": [],
     "dependencies": {
@@ -21,7 +21,7 @@
         "moment": "^2.30.1",
         "mongodb": "^6.5.0",
         "mysql": "^2.18.1",
-        "openai": "^3.3.0",
+        "openai": "^4.47.2",
         "sqlite3": "^5.1.7",
         "wa-sticker-formatter": "4.4.4"
     },

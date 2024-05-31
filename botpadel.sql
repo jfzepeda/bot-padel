@@ -14,6 +14,7 @@
 
 -- DELETE FROM reservas;
 -- DELETE FROM reservas WHERE numero_telefonico = "5213411479199";
+-- DELETE FROM reservas WHERE nombre_cliente = "Felipe";
 
 -- ALTER TABLE reservas ADD numero_telefonico TEXT;
 

@@ -2,3 +2,6 @@ node_modules/
 *_sessions
 *qr.png
 *.log
+migration.js
+botpadel.db
+botpadel.sql
