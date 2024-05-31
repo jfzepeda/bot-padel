@@ -4,13 +4,11 @@ require("dotenv").config
 const QRPortalWeb = require('@bot-whatsapp/portal')
 const BaileysProvider = require('@bot-whatsapp/provider/baileys')
 const MockAdapter = require('@bot-whatsapp/database/mock')
-const { asignarHora, asignarDia, asignarFecha, asignarCancha } = require('./validacion');
-const { registerUser, lookupUser, getBookings, book } = require('./database');
-const { getTime, getGender } = require('./saludos');
-const { reservarCancha, ReservaCanchaPadel } = require('./migration');
 // const { ask } = require('./chatgpt');
-
-const moment = require('moment'); 
+const { registerUser, lookupUser, getBookings, book } = require('./database');
+const { reservarCancha, ReservaCanchaPadel } = require('./migration');
+const { getTime, getGender } = require('./saludos');
+const { asignarHora, asignarDia, asignarFecha, asignarCancha } = require('./validacion');
 
 const path = require("path")
 const fs = require("fs");
