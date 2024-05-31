@@ -91,6 +91,7 @@ const flowReservar = addKeyword(['reservar', 'rr'])
     .addAction( { capture: true },
     async (ctx, { fallBack, flowDynamic, gotoFlow }) => {
         const num = ctx.from;
+        court = parseInt(court);
         try {
             const resultado = await reservarCancha(nombre, court, date, hour, num);
             await flowDynamic(resultado);
