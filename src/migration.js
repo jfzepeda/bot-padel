@@ -23,7 +23,7 @@ async function verificarDisponibilidad(cancha, dia, hora) {
     } else {
         const connection = await getConnection();
         const [rows] = await connection.execute(
-            'SELECT * FROM reservas WHERE cancha = ? AND dia = ? AND hora = ?',
+            'SELECT * FROM reservations WHERE cancha = ? AND dia = ? AND hora = ?',
             [cancha, dia, hora]
         );
         await connection.end();
@@ -39,7 +39,7 @@ async function ejecutarConsulta(mensaje) {
     return rows;
 }
 
-// Clase para manejar las reservas
+// Clase para manejar las reservations
 class ReservaCanchaPadel {
     constructor(nombre_cliente, cancha, dia, hora, num) {
         this.nombre_cliente = nombre_cliente;
@@ -55,7 +55,7 @@ class ReservaCanchaPadel {
         const connection = await getConnection();
         try {
             await connection.execute(
-                'INSERT INTO reservas (nombre_cliente, cancha, dia, hora, confirmada, numero_telefonico) VALUES (?, ?, ?, ?, ?, ?)',
+                'INSERT INTO reservations (nombre_cliente, cancha, dia, hora, confirmada, numero_telefonico) VALUES (?, ?, ?, ?, ?, ?)',
                 [this.nombre_cliente, this.cancha, this.dia, this.hora, this.confirmada ? 1 : 0, this.num]
             );
             await connection.end();
@@ -66,12 +66,12 @@ class ReservaCanchaPadel {
         }
     }
 
-    // Métodos estáticos para confirmar, cancelar y consultar reservas
+    // Métodos estáticos para confirmar, cancelar y consultar reservations
     static async confirmarReserva(numero_telefonico, id_reserva) {
         const connection = await getConnection();
         try {
             await connection.execute(
-                'UPDATE reservas SET confirmada = 1 WHERE numero_telefonico = ? AND id = ?',
+                'UPDATE reservations SET confirmada = 1 WHERE numero_telefonico = ? AND id = ?',
                 [numero_telefonico, id_reserva]
             );
             await connection.end();
@@ -86,7 +86,7 @@ class ReservaCanchaPadel {
         const connection = await getConnection();
         try {
             await connection.execute(
-                'DELETE FROM reservas WHERE numero_telefonico = ? AND id = ?',
+                'DELETE FROM reservations WHERE numero_telefonico = ? AND id = ?',
                 [numero_cliente, id_reserva]
             );
             await connection.end();
@@ -101,37 +101,37 @@ class ReservaCanchaPadel {
         const connection = await getConnection();
         try {
             const [rows] = await connection.execute(
-                'SELECT * FROM reservas WHERE numero_telefonico = ? AND id = ?',
+                'SELECT * FROM reservations WHERE numero_telefonico = ? AND id = ?',
                 [numero_cliente, id_cliente]
             );
             await connection.end();
             return rows.length > 0;
         } catch (err) {
             await connection.end();
-            throw new Error("Error al consultar reservas: " + err.message);
+            throw new Error("Error al consultar reservations: " + err.message);
         }
     }
 
-    static async consultarReservas(columna, arg) {
+    static async consultarreservations(columna, arg) {
         const connection = await getConnection();
         try {
             const [rows] = await connection.execute(
-                `SELECT * FROM reservas WHERE ${columna} = ?`,
+                `SELECT * FROM reservations WHERE ${columna} = ?`,
                 [arg]
             );
             await connection.end();
             if (rows.length > 0) {
-                let response = `RESERVAS PARA *${rows[0].nombre_cliente}:*\n\n`;
+                let response = `reservations PARA *${rows[0].nombre_cliente}:*\n\n`;
                 rows.forEach((row) => {
                     response += `${row.id}. Cancha: ${row.cancha}, Día: ${row.dia}, Hora: ${row.hora}, Confirmada: ${row.confirmada ? 'Sí' : 'No'}\n\n`;
                 });
                 return response.trim();
             } else {
-                throw new Error("No hay reservas para " + arg);
+                throw new Error("No hay reservations para " + arg);
             }
         } catch (err) {
             await connection.end();
-            throw new Error("Error al consultar reservas: " + err.message);
+            throw new Error("Error al consultar reservations: " + err.message);
         }
     }
 }
