@@ -88,11 +88,9 @@ const flowReservar = addKeyword(['reservar', 'rr'])
         }
         console.log("Cancha asignada", court);
     })
-    .addAnswer('Finalmente, cuál es su nombre?', 
-    { capture: true },
+    .addAction( { capture: true },
     async (ctx, { fallBack, flowDynamic, gotoFlow }) => {
         const num = ctx.from;
-        nombre = ctx.body;
         try {
             const resultado = await reservarCancha(nombre, court, date, hour, num);
             await flowDynamic(resultado);
@@ -191,17 +189,17 @@ const flowSubMenu = addKeyword(['menu', 'menú'])
     .addAnswer( subMenu,
         { delay: 500, capture: true },
         async (ctx, { gotoFlow, fallBack, flowDynamic }) => {
-            const res = clearText(ctx.body);
+            let res = clearText(ctx.body);
             switch (true) {
-                case /^1$|consul|ver mis/.test(res):
+                case /^1\.?$|consul|ver mis/.test(res):
                     return gotoFlow(flowConsultar);
-                case /^2$|conf/.test(res):
+                case /^2\.?$|conf/.test(res):
                     return gotoFlow(flowConfirmar);
-                case /^3$|cance/.test(res):
+                case /^3\.?$|cance/.test(res):
                     return gotoFlow(flowCancelar);
-                case /^4$|redes/.test(res):
+                case /^4\.?$|redes/.test(res):
                     return await flowDynamic(redes)
-                case /^0$|volv|regres|menu/.test(res):
+                case /^0\.?$|volv|regres|menu/.test(res):
                     await flowDynamic('Volviendo al menu principal...');
                     return gotoFlow(flowMainMenu);
             }
@@ -213,15 +211,15 @@ const flowMainMenu = addKeyword(['menu', 'menú','opciones'])
     .addAnswer(mainMenu,
         { delay: 500, capture: true },
         async (ctx, { gotoFlow, fallBack, flowDynamic }) => {
-            const res = clearText(ctx.body);
+            let res = clearText(ctx.body);
             switch (true) {
-                case /^1$|reser|agenda/.test(res):
+                case /^1\.?$|reser|agenda/.test(res):
                     return gotoFlow(flowReservar);
-                case /^2$|serv/.test(res):
+                case /^2\.?$|serv/.test(res):
                     return gotoFlow(flowServicios);
-                case /^3$|ubic|estamos|donde/.test(res):
+                case /^3\.?$|ubic|estamos|donde/.test(res):
                     return await flowDynamic("Calle Ignacio Sandoval 1955, Paseo de La Cantera\n\nSolo haz click aquí 👉  https://maps.app.goo.gl/VtGFSZdAvPH2a6529");
-                case /^4$|mas/.test(res):
+                case /^4\.?$|mas/.test(res):
                     return gotoFlow(flowSubMenu);
             }
         }
