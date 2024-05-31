@@ -5,9 +5,6 @@ require("dotenv").config
 const QRPortalWeb = require('@bot-whatsapp/portal')
 const BaileysProvider = require('@bot-whatsapp/provider/baileys')
 const MockAdapter = require('@bot-whatsapp/database/mock')
-// const MongoAdapter = require('@bot-whatsapp/database/mongo')
-const moment = require('moment'); 
-const { delay } = require('@whiskeysockets/baileys');
 const { asignarHora, asignarFecha, asignarCancha } = require('./validacion');
 
 const path = require("path")
@@ -211,33 +208,6 @@ const flowDev = addKeyword('devflowjf').addAnswer('Terminal...',
     console.log('Mensaje enviado a la Terminal')
     devDB(mst);
 });
-
-// Configuración y creación del bot   // Definir los flujos para las acciones
-// const flowReserar = addKeyword(['reservar', 'rr'])
-//     .addAnswer('Por favor, introduce tu nombre, cancha, día y hora para la reserva. Ejemplo: Juan, 1, 2024-05-15, 18:00', 
-//     { capture: true },
-//     async (ctx, {gotoFlow, fallBack}) => {
-
-//         const num = ctx.from;
-//         // Suponemos que el usuario responde en un solo mensaje con todos los datos separados por comas
-//         const details = ctx.body.split(',').map(item => item.trim());
-//         if (details.length === 4) {
-//             /*Log*/console.log(details)
-//             const [nombre_cliente, cancha, dia, hora] = details;
-//             reservarCancha(nombre_cliente, cancha, dia, hora, num);
-//         } else if ( ["salir","Salir", "SALIR"].includes(ctx.body) ) {
-//             return gotoFlow(flowMenu);
-//         } else {
-//             return fallBack("Respuesta no válida, por favor utilize el formato correcto:\n*Juan, 1, 2024-05-15, 18:00*\n \nSi quiere volver al menu escriba SALIR"); }
-//     })
-//     .addAction({ delay: 500 }, async (_, { flowDynamic, gotoFlow }) => {
-//         if (!sucBooked) {
-//             await flowDynamic(rReservar)  
-//             return gotoFlow(flowReservar);
-//         } else {
-//             return await flowDynamic(rReservar)  }  
-//     });
-// Configuración y creación del bot   // Definir los flujos para las acciones
 
 const flowReservar = addKeyword(['reservar', 'rr'])
     .addAnswer('Para qué día te gustaría reservar?', 
