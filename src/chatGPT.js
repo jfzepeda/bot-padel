@@ -1,9 +1,12 @@
 const OpenAI = require('openai');
-const { ejecutarConsultaGPT } = require('./migration');
 require('dotenv').config(); // Cargar las variables de entorno .env
 
 const path = require("path")
 const fs = require("fs");
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
 
 // Crear una funcion para asignar directorios de mensajes
 async function getDirectory(aciton) {
@@ -17,17 +20,16 @@ async function getDirectory(aciton) {
     "reserva": "reserva.txt",
   }
   const pathPrompt = path.join(__dirname, "../prompts", diccMensajes[aciton])
-  const prompt = fs.readFileSync(pathPrompt, "utf8")
+  let file = fs.readFileSync(pathPrompt, "utf8")
+  return file
   
 }
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+ask('Caunto mide la torre Eiffel?', 'prompt')
 
 // async function ask(messaje) {
-async function ask(messaje, aciton) {
-  const prompt = await getDirectory(aciton)
+async function ask(messaje, file) {
+  const prompt = await getDirectory(file)
 
   const completion = await openai.chat.completions.create({
     messages: [

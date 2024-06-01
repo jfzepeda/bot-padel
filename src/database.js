@@ -53,7 +53,7 @@ function lookupUser(phone) {
 }
 
 // Método para ejecutar consultas SQL
-async function ejecutarConsultaGPT(mensaje) {
+async function ejecutarQueryGPT(mensaje) {
     return new Promise((resolve, reject) => {
         connection.query(mensaje, (err, rows) => {
             if (err) {
@@ -212,4 +212,4 @@ async function reservarCancha(nombre_cliente, court, day, hour, num) {
 
 
 module.exports = { reservarCancha, consultaDoble, consultarReservas, confirmarReserva, cancelarReserva, 
-    registerUser, lookupUser, ejecutarConsultaGPT, getID };
+    registerUser, lookupUser, ejecutarQueryGPT, getID };

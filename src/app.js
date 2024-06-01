@@ -6,7 +6,7 @@ const BaileysProvider = require('@bot-whatsapp/provider/baileys')
 const MockAdapter = require('@bot-whatsapp/database/mock')
 const { ask } = require('./chatgpt');
 const { reservarCancha, consultaDoble, consultarReservas, confirmarReserva, cancelarReserva, 
-    registerUser, lookupUser, ejecutarConsultaGPT, getID } = require('./database');
+    registerUser, lookupUser, ejecutarQueryGPT, getID } = require('./database');
 const { getTime, getGender } = require('./saludos');
 const { asignarHora, asignarDia, asignarISOdate, asignarCancha, asignarRow } = require('./validacion');
 
@@ -274,11 +274,11 @@ const flowGPT = addKeyword('GPT')
     .addAnswer("Estoy aquí para asistirle con el menú",
     { delay: 500, capture: true },
     async (ctx, { flowDynamic }) => {
-        let resGPT = await ask(ctx.body)
+        let resGPT = await ask(ctx.body, 'prompt')
         if (resGPT.includes('null')) {
             return await flowDynamic("No entiendo, ¿podrías repetirlo de otra forma?");
         } else {
-            ejecutarConsultaGPT(resGPT)
+            // ejecutarQueryGPT(resGPT)
             return await flowDynamic(resGPT);
         }
     });
