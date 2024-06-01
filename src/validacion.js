@@ -229,7 +229,8 @@ function asignarHora(hora) {
                     let len = hora.length;
 
                     if (len === 1) {
-                        hsm = "0" + hora;
+                        // hsm = "0" + hora;
+                        return 'AM o PM?'
                     } else if (len === 2) {
                         hsm = hora;
                     } else if (len > 2) {

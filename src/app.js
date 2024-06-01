@@ -27,6 +27,7 @@ const subMenu = fs.readFileSync(pathSubMenu, "utf8")
 
 
 let day, date, hour, court, name;
+let saveHour = null;
 let nombre = null;
 
 function clearText(txt) {
@@ -35,29 +36,30 @@ function clearText(txt) {
     return res;
 }
 
-const flowDev = addKeyword('devflowjf').addAnswer('Terminal...',
-    {capture: true},
-    async (ctx, {gotoFlow}) => {
-        console.log('Estas en el flow DEV')
-        const res = ctx.body;
-        if (res !== 'Killer10') {
-        // if (res == 'Salir') {
-            return gotoFlow(flowWelcome);
-        }
-        console.log('Contraseña aceptada')
-})
-.addAction({capture: true}, 
-    async (ctx ) => {
-    const mst = ctx.body;
-    console.log('Mensaje enviado a la Terminal')
-    devDB(mst);
-});
+// const flowDev = addKeyword('devflowjf').addAnswer('Terminal...',
+//     {capture: true},
+//     async (ctx, {gotoFlow}) => {
+//         console.log('Estas en el flow DEV')
+//         const res = ctx.body;
+//         if (res !== 'Killer10') {
+//         // if (res == 'Salir') {
+//             return gotoFlow(flowWelcome);
+//         }
+//         console.log('Contraseña aceptada')
+// })
+// .addAction({capture: true}, 
+//     async (ctx ) => {
+//     const mst = ctx.body;
+//     console.log('Mensaje enviado a la Terminal')
+//     devDB(mst);
+// });
 
 const flowGracias = addKeyword('gracias', 'gracais', 'grax', 'agradezco')
     .addAnswer('No hay de que, estamos para servirle!')
     newChat = true
 
-const flowReservar = addKeyword(['reservar', 'rr'])
+// const flowReservar = addKeyword(['reservar', 'rr'])
+const flowReservar = addKeyword(EVENTS.ACTION)
     .addAnswer('Para qué día quiere reservar?', 
     { capture: true, idle: 40000 },
     async (ctx, { endFlow, flowDynamic, fallBack }) => {
@@ -73,9 +75,15 @@ const flowReservar = addKeyword(['reservar', 'rr'])
     .addAnswer('A qué hora sería? (6:00 - 22:00 hrs)', 
     { capture: true },
     async (ctx, { fallBack }) => {
-        const input = clearText(ctx.body);
+        let input = clearText(ctx.body);
+        if (saveHour !== null) {
+            input = saveHour + ' ' + input; 
+        }
         hour = asignarHora(input);
         if (hour === "Ingresa una hora válida por favor") {
+            return fallBack(hour);
+        } else if (hour === 'AM o PM?') {
+            saveHour = input;
             return fallBack(hour);
         }
     })
@@ -100,7 +108,8 @@ const flowReservar = addKeyword(['reservar', 'rr'])
         }
     });
 
-const flowConsultar = addKeyword(['consulta', 'checar', 'ver mis', 'cs'])
+// const flowConsultar = addKeyword(['consulta', 'checar', 'ver mis', 'cs'])
+const flowConsultar = addKeyword(EVENTS.ACTION)
     .addAnswer('Buscando sus reservas...', {capture: false},
     async (ctx, { gotoFlow, flowDynamic }) => {
         const num = ctx.from;
@@ -112,7 +121,8 @@ const flowConsultar = addKeyword(['consulta', 'checar', 'ver mis', 'cs'])
         }
     });
 
-const flowConfirmar = addKeyword(['confirmar', 'cf'])
+// const flowConfirmar = addKeyword(['confirmar', 'cf'])
+const flowConfirmar = addKeyword(EVENTS.ACTION)
     .addAnswer('Ingrese su nombre para confirmar su reserva', 
     { capture: true },
     async (ctx, { flowDynamic, gotoFlow }) => {
@@ -160,7 +170,8 @@ const flowConfirmar = addKeyword(['confirmar', 'cf'])
     });
 
 
-const flowCancelar = addKeyword(['cancelar','cn'])
+// const flowCancelar = addKeyword(['cancelar','cn'])
+const flowCancelar = addKeyword(EVENTS.ACTION)
     .addAnswer('Ingrese su nombre para cancelar su reserva', 
     { capture: true },
     async (ctx, { flowDynamic, gotoFlow }) => {
@@ -207,7 +218,7 @@ const flowCancelar = addKeyword(['cancelar','cn'])
         }
     });
 
-const flowSubMenu = addKeyword(['menu', 'menú'])
+const flowSubMenu = addKeyword(EVENTS.ACTION)
     .addAnswer( subMenu,
     { delay: 500, capture: true },
     async (ctx, { gotoFlow, fallBack, flowDynamic }) => {
@@ -245,15 +256,15 @@ const flowMainMenu = addKeyword(['menu', 'menú','opciones'])
         }
     );
 
-const flowWelcome = addKeyword([EVENTS.WELCOME,'hola', 'buenas', 'buenos'])
-    .addAction(async (ctx, { flowDynamic, endFlow, gotoFlow }) => {
+const flowWelcome = addKeyword([EVENTS.WELCOME])
+    .addAction(async (ctx, { flowDynamic, gotoFlow }) => {
         let saludo = getTime();
         let telefono = ctx.from;
         try {
             nombre = await lookupUser(telefono);
             if (nombre !== undefined) {
-                await flowDynamic(`Hola ${saludo} ${nombre}! En qué podemos servirle? 😊`)
-                return gotoFlow(flowMainMenu);
+                await flowDynamic(`Hola ${saludo} ${nombre}! \nEn qué podemos servirle? 😊`)
+                return gotoFlow(flowGPT);
             }
             return await flowDynamic([`🎾 ¡Hola ${saludo}, bienvenido a Hi Padel Club! 🎾\n\nPodría compartinos su nombre por favor?`]);
         } catch (error) {
@@ -267,19 +278,36 @@ const flowWelcome = addKeyword([EVENTS.WELCOME,'hola', 'buenas', 'buenos'])
             let telefono = ctx.from;
             nombre = await getGender(res)
             registerUser(telefono, nombre)
-            return await flowDynamic([`Gracias ${nombre}!`, 'En qué podemos servirle? 😊'])
+            await flowDynamic([`Gracias ${nombre}!`, 'En qué podemos servirle? 😊'])
+            return gotoFlow(flowGPT);
     })
 
-const flowGPT = addKeyword('GPT')
-    .addAnswer("Estoy aquí para asistirle con el menú",
+const flowGPT = addKeyword('GPT').addAction(
+    // .addAnswer("Haz tu consulta: ",
     { delay: 500, capture: true },
-    async (ctx, { flowDynamic }) => {
-        let resGPT = await ask(ctx.body, 'prompt')
-        if (resGPT.includes('null')) {
-            return await flowDynamic("No entiendo, ¿podrías repetirlo de otra forma?");
-        } else {
-            // ejecutarQueryGPT(resGPT)
-            return await flowDynamic(resGPT);
+    async (ctx, { flowDynamic, gotoFlow }) => {
+        let resGPT = await ask(ctx.body, 'nav');
+        resGPT = resGPT.trim();
+        switch (true) {
+            case resGPT == 'flowReservar':
+                return gotoFlow(flowReservar);
+            case resGPT == 'flowConsultar':
+                return gotoFlow(flowConsultar);
+            case resGPT == 'flowConfirmar':
+                return gotoFlow(flowConfirmar);
+            case resGPT == 'flowCancelar':
+                return gotoFlow(flowCancelar);
+            case resGPT == 'flowMainMenu':
+                return gotoFlow(flowMainMenu);
+            case resGPT == 'flowSubMenu':
+                return gotoFlow(flowSubMenu);
+            case resGPT == 'flowGracias':
+                return gotoFlow(flowGracias);
+            case resGPT == 'NO ENTIENDO':
+                await flowDynamic("Disculpe no logré comprender su solicitud, le comparto nuestras opciones");
+                return gotoFlow(flowMainMenu);
+            default:
+                return await flowDynamic(resGPT);
         }
     });
 
