@@ -1,5 +1,11 @@
 const { DateTime } = require("luxon");
 
+function clearText(txt) {
+    let res = txt.toLowerCase();
+    res = res.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    return res;
+}
+
 // VALIDACION DE FECHA ////////////////////////////////
 // VALIDACION DE FECHA ////////////////////////////////
 // VALIDACION DE FECHA ////////////////////////////////
@@ -272,7 +278,39 @@ function asignarCancha(cancha) {
     }    
 }
 
+// VALIDACION DE ID ////////////////////////////////
+// VALIDACION DE ID ////////////////////////////////
+// VALIDACION DE ID ////////////////////////////////
+function asignarRow(frase) {
+    const ordinales = {
+        "primer": 1,
+        "segund": 2,
+        "tercer": 3,
+        "cuart": 4,
+        "quint": 5,
+        "sext": 6,
+        "septim": 7,
+        "octav": 8,
+        "noven": 9,
+        "decim": 10,
+        // "utim": rows.length          FUTURE IMPLEMENTATION
+    };
+
+    frase = clearText(frase);
+    const patronOrdinales = /(primer|segund|tercer|cuart|quint|sext|septim|octav|noven|decim|utim)/gi;
+    const numMatch = frase.match(patronOrdinales);
+
+    // Buscar coincidencias con los números ordinales
+    let coincidencia = ordinales[numMatch];
+    
+    // Si no hay coincidencias, devolver el mismo texto
+    if (coincidencia == undefined) {
+        return null;
+    } else {
+        return coincidencia;
+    }
+}
 
 // Exportar las funciones asignarHora y asignarISOdate
-module.exports = { asignarDia, asignarISOdate, reverseISO, asignarHora, asignarCancha };
+module.exports = { asignarDia, asignarISOdate, reverseISO, asignarHora, asignarCancha, asignarRow };
 

@@ -4,11 +4,11 @@ require("dotenv").config
 const QRPortalWeb = require('@bot-whatsapp/portal')
 const BaileysProvider = require('@bot-whatsapp/provider/baileys')
 const MockAdapter = require('@bot-whatsapp/database/mock')
-// const { ask } = require('./chatgpt');
-const { registerUser, lookupUser, getBookings, book } = require('./database');
-const { reservarCancha, confirmarReserva, cancelarReserva, consultaDoble, consultarReservas } = require('./migration');
+const { ask } = require('./chatgpt');
+const { reservarCancha, consultaDoble, consultarReservas, confirmarReserva, cancelarReserva, 
+    registerUser, lookupUser, ejecutarConsultaGPT, getID } = require('./database');
 const { getTime, getGender } = require('./saludos');
-const { asignarHora, asignarDia, asignarISOdate, asignarCancha } = require('./validacion');
+const { asignarHora, asignarDia, asignarISOdate, asignarCancha, asignarRow } = require('./validacion');
 
 const path = require("path")
 const fs = require("fs");
@@ -29,6 +29,11 @@ const subMenu = fs.readFileSync(pathSubMenu, "utf8")
 let day, date, hour, court, name;
 let nombre = null;
 
+function clearText(txt) {
+    let res = txt.toLowerCase();
+    res = res.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    return res;
+}
 
 const flowDev = addKeyword('devflowjf').addAnswer('Terminal...',
     {capture: true},
@@ -48,11 +53,9 @@ const flowDev = addKeyword('devflowjf').addAnswer('Terminal...',
     devDB(mst);
 });
 
-function clearText(txt) {
-    let res = txt.toLowerCase();
-    res = res.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-    return res;
-}
+const flowGracias = addKeyword('gracias', 'gracais', 'grax', 'agradezco')
+    .addAnswer('No hay de que, estamos para servirle!')
+    newChat = true
 
 const flowReservar = addKeyword(['reservar', 'rr'])
     .addAnswer('Para qué día quiere reservar?', 
@@ -91,14 +94,13 @@ const flowReservar = addKeyword(['reservar', 'rr'])
         nombre = await lookupUser(num);
         try {
             const resultado = await reservarCancha(nombre, court, date, hour, num);
-            console.log('Resultado: ', resultado);
             return await flowDynamic(resultado);
         } catch (error) {
             await flowDynamic(error.message);
         }
     });
 
-const flowConsultar = addKeyword(['consulta', 'cs'])
+const flowConsultar = addKeyword(['consulta', 'checar', 'ver mis', 'cs'])
     .addAnswer('Buscando sus reservas...', {capture: false},
     async (ctx, { gotoFlow, flowDynamic }) => {
         const num = ctx.from;
@@ -126,23 +128,37 @@ const flowConfirmar = addKeyword(['confirmar', 'cf'])
             return gotoFlow(flowSubMenu);
         }
     })
-    .addAnswer('Seleccione la reserva a confirmar', 
+    .addAnswer('Escriba el ID de la reserva a confirmar', 
     { capture: true },
-    async (ctx, { flowDynamic }) => {
-        const nId = ctx.body;
-        try {
-            const exist = await consultaDoble(numero, nId);
-            if (exist) {
-                try {
-                    const resultado = await confirmarReserva(numero, nId);
-                    return await flowDynamic(resultado);
-                } catch (error) {
-                    await flowDynamic(error.message); }
-            } else {
-                return await flowDynamic('Esa reserva no esta a su nombre'); }
-        } catch (error) { 
-            await flowDynamic(error.message); }
+    async (ctx, { flowDynamic, endFlow, fallBack }) => {
+        const response = ctx.body;
+        const numero = ctx.from;
+        const exist = await consultaDoble(numero, response);
+        if (exist && !isNaN(response)){
+            let nId = response
+            try {
+                const resultado = await confirmarReserva(numero, nId);
+                return await flowDynamic(resultado);
+            } catch (error) {
+                return await flowDynamic(error.message); }
+        } else if (!exist && !isNaN(response)) {
+            return await flowDynamic('Esa reserva no esta a su nombre');
+        } else {
+            let rowIndex = await asignarRow(response);
+            if (response == '.') {
+                rowIndex = 1;
+            } else if (rowIndex ==  null) {
+                return await flowDynamic('No existe ese ID');
+            }
+            let nId = await getID(rowIndex, numero);
+            try {
+                const resultado = await confirmarReserva(numero, nId);
+                return await flowDynamic(resultado);
+            } catch (error) {
+                return await flowDynamic(error.message); }
+        }
     });
+
 
 const flowCancelar = addKeyword(['cancelar','cn'])
     .addAnswer('Ingrese su nombre para cancelar su reserva', 
@@ -160,45 +176,58 @@ const flowCancelar = addKeyword(['cancelar','cn'])
             return gotoFlow(flowSubMenu);
         }
     })
-    .addAnswer('¿Qué número de reserva desea cancelar?', 
+    .addAnswer('¿Qué ID de reserva desea cancelar?', 
     { capture: true },
-    async (ctx, { flowDynamic }) => {
-        const nId = ctx.body;
-        try {
-            const resultado = await cancelarReserva(numero, nId);
-            return await flowDynamic(resultado);
-        } catch (error) {
-            await flowDynamic(error.message);
+    async (ctx, { flowDynamic, endFlow, fallBack }) => {
+        const response = ctx.body;
+        const numero = ctx.from;
+        const exist = await consultaDoble(numero, response);
+        if (exist && !isNaN(response)){
+            let nId = response
+            try {
+                const resultado = await cancelarReserva(numero, nId);
+                return await flowDynamic(resultado);
+            } catch (error) {
+                return await flowDynamic(error.message); }
+        } else if (!exist && !isNaN(response)) {
+            return await flowDynamic('Esa reserva no esta a su nombre');
+        } else {
+            let rowIndex = await asignarRow(response);
+            if (response == '.') {
+                rowIndex = 1;
+            } else if (rowIndex ==  null) {
+                return await flowDynamic('No existe ese ID');
+            }
+            let nId = await getID(rowIndex, numero);
+            try {
+                const resultado = await cancelarReserva(numero, nId);
+                return await flowDynamic(resultado);
+            } catch (error) {
+                return await flowDynamic(error.message); }
         }
     });
 
-
-const flowServicios = addKeyword(['Servicios', 'servicios'])
-    .addAnswer(serv);
-
 const flowSubMenu = addKeyword(['menu', 'menú'])
     .addAnswer( subMenu,
-        { delay: 500, capture: true },
-        async (ctx, { gotoFlow, fallBack, flowDynamic }) => {
-            let res = clearText(ctx.body);
-            switch (true) {
-                case /^1\.?$|consul|ver mis/.test(res):
-                    return gotoFlow(flowConsultar);
-                case /^2\.?$|conf/.test(res):
-                    return gotoFlow(flowConfirmar);
-                case /^3\.?$|cance/.test(res):
-                    return gotoFlow(flowCancelar);
-                case /^4\.?$|redes/.test(res):
-                    return await flowDynamic(redes)
-                case /^0\.?$|volv|regres|menu/.test(res):
-                    await flowDynamic('Volviendo al menu principal...');
-                    return gotoFlow(flowMainMenu);
-            }
+    { delay: 500, capture: true },
+    async (ctx, { gotoFlow, fallBack, flowDynamic }) => {
+        let res = clearText(ctx.body);
+        switch (true) {
+            case /^1\.?$|consul|ver mis/.test(res):
+                return gotoFlow(flowConsultar);
+            case /^2\.?$|conf/.test(res):
+                return gotoFlow(flowConfirmar);
+            case /^3\.?$|cance/.test(res):
+                return gotoFlow(flowCancelar);
+            case /^4\.?$|redes/.test(res):
+                return await flowDynamic(redes)
+            case /^0\.?$|volv|regres|menu/.test(res):
+                await flowDynamic('Volviendo al menu principal...');
+                return gotoFlow(flowMainMenu);
         }
-    );
+    });
 
 const flowMainMenu = addKeyword(['menu', 'menú','opciones'])
-    .addAnswer("🎾 ¡Hola, bienvenido a Hi Padel Club! 🎾")
     .addAnswer(mainMenu,
         { delay: 500, capture: true },
         async (ctx, { gotoFlow, fallBack, flowDynamic }) => {
@@ -207,9 +236,9 @@ const flowMainMenu = addKeyword(['menu', 'menú','opciones'])
                 case /^1\.?$|reser|agenda/.test(res):
                     return gotoFlow(flowReservar);
                 case /^2\.?$|serv/.test(res):
-                    return gotoFlow(flowServicios);
+                    return await flowDynamic(serv);
                 case /^3\.?$|ubic|estamos|donde/.test(res):
-                    return await flowDynamic("Calle Ignacio Sandoval 1955, Paseo de La Cantera\n\nSolo haz click aquí 👉  https://maps.app.goo.gl/VtGFSZdAvPH2a6529");
+                    return await flowDynamic("Av. Arquitecto Pedro Ramírez Vázquez 2014, Cdad. Guzmán.\n\Haz click aquí 👉  https://maps.app.goo.gl/yLx1F5He4BGYhyUK9");
                 case /^4\.?$|mas/.test(res):
                     return gotoFlow(flowSubMenu);
             }
@@ -241,10 +270,23 @@ const flowWelcome = addKeyword([EVENTS.WELCOME,'hola', 'buenas', 'buenos'])
             return await flowDynamic([`Gracias ${nombre}!`, 'En qué podemos servirle? 😊'])
     })
 
+const flowGPT = addKeyword('GPT')
+    .addAnswer("Estoy aquí para asistirle con el menú",
+    { delay: 500, capture: true },
+    async (ctx, { flowDynamic }) => {
+        let resGPT = await ask(ctx.body)
+        if (resGPT.includes('null')) {
+            return await flowDynamic("No entiendo, ¿podrías repetirlo de otra forma?");
+        } else {
+            ejecutarConsultaGPT(resGPT)
+            return await flowDynamic(resGPT);
+        }
+    });
+
 const main = async () => {
     const adapterDB = new MockAdapter();
     const adapterProvider = createProvider(BaileysProvider);
-    const adapterFlow = createFlow([flowWelcome, flowMainMenu,flowSubMenu, flowReservar, flowConsultar, flowConfirmar, flowCancelar, flowServicios]);
+    const adapterFlow = createFlow([flowWelcome, flowMainMenu,flowSubMenu, flowReservar, flowConsultar, flowConfirmar, flowCancelar, flowGracias, flowGPT]);
 
     createBot({
         flow: adapterFlow,
