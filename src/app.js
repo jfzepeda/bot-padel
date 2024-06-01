@@ -61,11 +61,8 @@ const flowGracias = addKeyword('gracias', 'gracais', 'grax', 'agradezco')
 // const flowReservar = addKeyword(['reservar', 'rr'])
 const flowReservar = addKeyword(EVENTS.ACTION)
     .addAnswer('Para qué día quiere reservar?', 
-    { capture: true, idle: 40000 },
+    { capture: true },
     async (ctx, { endFlow, flowDynamic, fallBack }) => {
-        if (ctx?.idleFallBack) {
-            return endFlow("No recibimos su respuesta\nVolviendo al *menu*... ");
-        }
         day = asignarDia(ctx.body);
         if (day.includes('válido')) { 
             return fallBack(day); 
@@ -273,7 +270,7 @@ const flowWelcome = addKeyword([EVENTS.WELCOME])
         }
     })
     .addAction( {capture: true},
-        async (ctx, {flowDynamic}) => {
+        async (ctx, {flowDynamic, gotoFlow}) => {
             let res = ctx.body
             let telefono = ctx.from;
             nombre = await getGender(res)
