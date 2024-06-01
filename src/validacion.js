@@ -147,20 +147,39 @@ function asignarISOdate(fechaStr) {
 // REVERTIR FECHA ISO ////////////////////////////////
 // REVERTIR FECHA ISO ////////////////////////////////
 function reverseISO(fechaISO) {
-    // Dividir la fecha en año, mes y día
-    const [year, month, day] = fechaISO.split("-");
+    // Check if fechaISO is an object    
+    if (fechaISO instanceof Date) {
+        const month = fechaISO.getMonth() + 1; // Los meses en JavaScript son 0-indexados
+        const day = fechaISO.getDate();
+
+        // Obtener el nombre del mes basado en el número de mes
+        const meses = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
+        const mesNombre = meses[month - 1];
+
+        // Formatear el día a eliminar ceros a la izquierda
+        const diaFormateado = day.toString();
+
+        // Construir la fecha en el formato deseado
+        const fechaFormateada = `${diaFormateado} de ${mesNombre}`;
+
+        return fechaFormateada;
+    } else {
+        // Dividir la fecha en año, mes y día
+        const [year, month, day] = fechaISO.split("-");
+        
+        // Obtener el nombre del mes basado en el número de mes
+        const meses = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
+        const mesNombre = meses[parseInt(month) - 1];
+        
+        // Formatear el día a eliminar ceros a la izquierda
+        const diaFormateado = parseInt(day).toString();
+        
+        // Construir la fecha en el formato deseado
+        const fechaFormateada = `${diaFormateado} de ${mesNombre}`;
+        
+        return fechaFormateada;
+    }
     
-    // Obtener el nombre del mes basado en el número de mes
-    const meses = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
-    const mesNombre = meses[parseInt(month) - 1];
-    
-    // Formatear el día a eliminar ceros a la izquierda
-    const diaFormateado = parseInt(day).toString();
-    
-    // Construir la fecha en el formato deseado
-    const fechaFormateada = `${diaFormateado} de ${mesNombre}`;
-    
-    return fechaFormateada;
 }
 
 // VALIDACION DE HORA ////////////////////////////////
@@ -193,7 +212,12 @@ function asignarHora(hora) {
             if (!isNaN(parsedTime.getTime())) {
                 return parsedTime.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' });
             } else {
+                // Busca cualquier coincidencia numerica
+                let match = hora.match(/\d+/g);
+                hora = match[0];
+
                 if (!isNaN(hora)) {
+                    // console.log('Dentro del IF')
                     hora = hora.trim();
                     let hsm;
                     let len = hora.length;
@@ -230,6 +254,8 @@ function asignarHora(hora) {
         return "Ingresa una hora válida por favor";
     }
 }
+
+// console.log(asignarHora('A las 6'))
 
 // VALIDACION DE MESA ////////////////////////////////
 // VALIDACION DE MESA ////////////////////////////////

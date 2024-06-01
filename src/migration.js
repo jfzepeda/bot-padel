@@ -1,154 +1,155 @@
 const { DB_HOST, DB_USER, DB_PASSWORD, DB_PORT, DB_NAME } = require('./config');
 const { reverseISO } = require('./validacion');
-const mysql = require('mysql2/promise');
+const mysql = require('mysql2');
 const moment = require('moment');
 
-const dbConfig = {
+const connection = mysql.createConnection({
     user: DB_USER,
     password: DB_PASSWORD,
     host: DB_HOST,
     port: DB_PORT,
     database: DB_NAME
-};
+});
 
-// Función para crear una conexión a la base de datos
-async function getConnection() {
-    const connection = await mysql.createConnection(dbConfig);
-    return connection;
-}
+// Conectar a la base de datos
+connection.connect((err) => {
+    if (err) {
+        console.error('Error de conexión a MySQL:', err);
+        return;
+    }
+    console.log('Conectado a la base de datos MySQL');
+});
 
 // Función para verificar la disponibilidad de la cancha
 async function verificarDisponibilidad(cancha, dia, hora) {
     if (!moment(dia, 'YYYY-MM-DD', true).isValid() || !moment(hora, 'HH:mm', true).isValid()) {
         throw new Error('Formato de fecha u hora no válido.');
     } else {
-        const connection = await getConnection();
-        const [rows] = await connection.execute(
-            'SELECT * FROM reservations WHERE cancha = ? AND dia = ? AND hora = ?',
-            [cancha, dia, hora]
-        );
-        await connection.end();
-        return rows.length === 0; // true si la cancha está disponible, false si no
+        return new Promise(async (resolve, reject) => {
+
+            const query = 'SELECT * FROM reservations WHERE cancha = ? AND dia = ? AND hora = ?';
+            connection.query(query, [cancha, dia, hora], (err, rows) => {
+                if (err) {
+                    reject(new Error('Error al verificar la disponibilidad de la cancha: ' + err.message))
+                } else {
+                    resolve (rows.length == 0); // true si la cancha está disponible, false si no
+                }
+            })
+        });
     }
 }
 
 // Método para ejecutar consultas SQL
 async function ejecutarConsulta(mensaje) {
-    const connection = await getConnection();
-    const [rows] = await connection.execute(mensaje);
-    await connection.end();
+    const [rows] = connection.query(mensaje);
     return rows;
 }
 
-// Clase para manejar las reservations
-class ReservaCanchaPadel {
-    constructor(nombre_cliente, cancha, dia, hora, num) {
-        this.nombre_cliente = nombre_cliente;
-        this.cancha = cancha;
-        this.dia = dia;
-        this.hora = hora;
-        this.confirmada = false;
-        this.num = num;
-    }
-
-    // Método para guardar la reserva en la base de datos
-    async guardarEnDB() {
-        const connection = await getConnection();
+async function guardarReservaEnDB(nombre_cliente, cancha, dia, hora, confirmada, num) {
+    return new Promise(async (resolve, reject) => {
         try {
-            await connection.execute(
-                'INSERT INTO reservations (nombre_cliente, cancha, dia, hora, confirmada, numero_telefonico) VALUES (?, ?, ?, ?, ?, ?)',
-                [this.nombre_cliente, this.cancha, this.dia, this.hora, this.confirmada ? 1 : 0, this.num]
-            );
-            await connection.end();
-            return ["Reserva creada con éxito!", `📆 Dia: ${reverseISO(this.dia)} \n🕑 Hora ${this.hora} \n🥅 Cancha ${this.cancha} \n🗒️ Confirmada ${this.confirmada ? '✅' : '❌'} `];
+            const query = 'INSERT INTO reservations (nombre_cliente, cancha, dia, hora, confirmada, numero_telefonico) VALUES (?, ?, ?, ?, ?, ?)';
+            connection.query(query, [nombre_cliente, cancha, dia, hora, confirmada ? 1 : 0, num], async (err, result) => {
+                if (err) {
+                    return reject(new Error("Error al guardar su reserva: " + err.message));
+                }
+                const id_reserva = result.insertId;
+                // const response = [id_reserva, "Reserva creada con éxito!", `📆 Dia: ${reverseISO(dia)} \n🕑 Hora ${hora} \n🥅 Cancha ${cancha} \n🗒️ Confirmada ${confirmada ? '✅' : '❌'} `];
+                const response = [`🔘 ID de reserva: ${id_reserva} \n📆 Dia: ${reverseISO(dia)} \n🕑 Hora ${hora} \n🥅 Cancha ${cancha} \n🗒️ Confirmada ${confirmada ? '✅' : '❌'} `];
+                resolve('Reserva creada con éxito! 🎉\n\n' + response);
+            });
         } catch (err) {
-            await connection.end();
-            throw new Error("Error al guardar su reserva: " + err.message);
+            reject(new Error("Error al guardar su reserva: " + err.message));
         }
-    }
+    });
+}
 
-    // Métodos estáticos para confirmar, cancelar y consultar reservations
-    static async confirmarReserva(numero_telefonico, id_reserva) {
-        const connection = await getConnection();
-        try {
-            await connection.execute(
-                'UPDATE reservations SET confirmada = 1 WHERE numero_telefonico = ? AND id = ?',
-                [numero_telefonico, id_reserva]
-            );
-            await connection.end();
-            return `Reserva ${id_reserva} confirmada ✅`;
-        } catch (err) {
-            await connection.end();
-            throw new Error("Error al confirmar la reserva: " + err.message);
-        }
-    }
 
-    static async cancelarReserva(numero_cliente, id_reserva) {
-        const connection = await getConnection();
-        try {
-            await connection.execute(
-                'DELETE FROM reservations WHERE numero_telefonico = ? AND id = ?',
-                [numero_cliente, id_reserva]
-            );
-            await connection.end();
-            return `Reserva ${id_reserva} cancelada con éxito. Recuerda que siempre puedes volver a reservar desde el MENÚ`;
-        } catch (err) {
-            await connection.end();
-            throw new Error("Error al cancelar la reserva: " + err.message);
-        }
-    }
-
-    static async consultaDoble(numero_cliente, id_cliente) {
-        const connection = await getConnection();
-        try {
-            const [rows] = await connection.execute(
-                'SELECT * FROM reservations WHERE numero_telefonico = ? AND id = ?',
-                [numero_cliente, id_cliente]
-            );
-            await connection.end();
-            return rows.length > 0;
-        } catch (err) {
-            await connection.end();
-            throw new Error("Error al consultar reservations: " + err.message);
-        }
-    }
-
-    static async consultarReservas(columna, arg) {
-        const connection = await getConnection();
-        try {
-            const [rows] = await connection.execute(
-                `SELECT * FROM reservations WHERE ${columna} = ?`,
-                [arg]
-            );
-            await connection.end();
-            if (rows.length > 0) {
-                // console.log('Dentro de las rows')
-                let response = `RESERVACIONES PARA *${rows[0].nombre_cliente}:*\n\n`;
-                rows.forEach((row) => {
-                    response += `🔘 ${row.id}. \n📆 Dia: ${reverseISO(this.dia)} \n🕑 Hora ${this.hora} \n🥅 Cancha ${this.cancha} \n🗒️ Confirmada ${this.confirmada ? '✅' : '❌'} \n\n`;
-                });
-                console.log(response);
-                return response.trim();
-            } else {
-                throw new Error("No hay reservations para " + arg);
+// Función para confirmar una reserva
+async function confirmarReserva(numero_telefonico, id_reserva) {
+    return new Promise((resolve, reject) => {
+        const query = 'UPDATE reservations SET confirmada = 1 WHERE numero_telefonico = ? AND id = ?';
+        connection.query(query, [numero_telefonico, id_reserva], async (err, result) => {
+            if (err) {
+                return reject(new Error("Error al confirmar la reserva: " + err.message));
             }
+            if (result.affectedRows > 0) {
+                resolve(`Reserva ${id_reserva} confirmada ✅`);
+            } else {
+                resolve('No se encontró la reserva para confirmar');
+            }
+        });
+    });
+}
+
+
+async function cancelarReserva(numero_cliente, id_reserva) {
+    return new Promise(async (resolve, reject) => {
+
+            const query = 'DELETE FROM reservations WHERE numero_telefonico = ? AND id = ?';
+            connection.query(query, [numero_cliente, id_reserva], async (err, result) => {
+                if (err) {
+                    return reject(new Error("Error al cancelar la reserva: " + err.message));
+                }
+                if (result.affectedRows > 0) {
+                    resolve(`Reserva ${id_reserva} cancelada con éxito! ❌`);
+                } else {
+                    resolve('No se encontró la reserva para cancelar');
+                }
+            });
+    });
+}
+
+
+// Función para consultar si hay duplicados
+async function consultaDoble(numero_cliente, id_cliente) {
+    return new Promise(async (resolve, reject) => {
+        try {
+            const query = 'SELECT * FROM reservations WHERE numero_telefonico = ? AND id = ?';
+            connection.query(query, [numero_cliente, id_cliente], async (err, rows) => {
+                if (err) {
+                    return reject(new Error("Error al consultar reservations: " + err.message));
+                }
+                resolve(rows.length > 0);
+            });
         } catch (err) {
-            await connection.end();
-            throw new Error("Error al consultar reservations: " + err.message);
+            reject(new Error("Error al consultar reservations: " + err.message));
         }
-    }
+    });
+}
+
+
+
+function consultarReservas(columna, arg) {
+    return new Promise((resolve, reject) => {
+        const query = `SELECT * FROM reservations WHERE ${columna} = ?`;
+        connection.query(query, [arg], (err, rows) => {
+            if (err) {
+                return reject(err);
+            }
+            if (rows.length > 0) {
+                let response = `Reservaciones para *${rows[0].nombre_cliente}:*\n\n`;
+                rows.forEach((row) => {
+                    response += `🔘 ID de reserva: ${row.id} \n📆 Dia: ${reverseISO(row.dia)} \n🕑 Hora ${row.hora} \n🥅 Cancha ${row.cancha} \n🗒️ Confirmada ${row.confirmada ? '✅' : '❌'} \n\n`;
+                });
+                response = response.trim();
+                console.log(response);
+                resolve(response);
+            } else {
+                resolve('No hay reservaciones existentes'); // Si no se encuentra el usuario, devuelve undefined
+            }
+        });
+    });
 }
 
 // Función para manejar la reserva de una cancha
-async function reservarCancha(nombre_cliente, cancha, dia, hora, num) {
-    console.log('Funcion reservarCancha');
-    const disponible = await verificarDisponibilidad(cancha, dia, hora);
+async function reservarCancha(nombre_cliente, court, day, hour, num) {
+    const disponible = await verificarDisponibilidad(court, day, hour);
     if (disponible) {
-        const reserva = new ReservaCanchaPadel(nombre_cliente, cancha, dia, hora, num);
-        return reserva.guardarEnDB();
+        return await guardarReservaEnDB(nombre_cliente, court, day, hour, false, num);
     } else {
         throw new Error('Cancha no disponible, seleccione otro horario');
     }
 }
 
-module.exports = { reservarCancha, ReservaCanchaPadel };
+module.exports = { reservarCancha, confirmarReserva, cancelarReserva, consultaDoble, consultarReservas };

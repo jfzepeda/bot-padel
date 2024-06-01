@@ -6,7 +6,7 @@ const BaileysProvider = require('@bot-whatsapp/provider/baileys')
 const MockAdapter = require('@bot-whatsapp/database/mock')
 // const { ask } = require('./chatgpt');
 const { registerUser, lookupUser, getBookings, book } = require('./database');
-const { reservarCancha, ReservaCanchaPadel } = require('./migration');
+const { reservarCancha, confirmarReserva, cancelarReserva, consultaDoble, consultarReservas } = require('./migration');
 const { getTime, getGender } = require('./saludos');
 const { asignarHora, asignarDia, asignarISOdate, asignarCancha } = require('./validacion');
 
@@ -66,7 +66,6 @@ const flowReservar = addKeyword(['reservar', 'rr'])
             return fallBack(day); 
         }
         date = asignarISOdate(day);
-        console.log("Fecha asignada", date);
     })
     .addAnswer('A qué hora sería? (6:00 - 22:00 hrs)', 
     { capture: true },
@@ -76,7 +75,6 @@ const flowReservar = addKeyword(['reservar', 'rr'])
         if (hour === "Ingresa una hora válida por favor") {
             return fallBack(hour);
         }
-        console.log("Hora asignada", hour);
     })
     .addAnswer('Cuál cancha prefieres? [1-4]', 
     { capture: true },
@@ -86,40 +84,39 @@ const flowReservar = addKeyword(['reservar', 'rr'])
         if (court == "Elige una cancha valida") {
             return fallBack(court);
         }
-        console.log("Cancha asignada", court);
     })
     .addAction( async (ctx, { flowDynamic }) => {
         const num = ctx.from;
         court = parseInt(court);
-        nombre = lookupUser(num);
+        nombre = await lookupUser(num);
         try {
             const resultado = await reservarCancha(nombre, court, date, hour, num);
+            console.log('Resultado: ', resultado);
             return await flowDynamic(resultado);
         } catch (error) {
             await flowDynamic(error.message);
         }
     });
 
-const flowConsultar = addKeyword(['consultar', 'consulta', 'cons'])
+const flowConsultar = addKeyword(['consulta', 'cs'])
     .addAnswer('Buscando sus reservas...', {capture: false},
     async (ctx, { gotoFlow, flowDynamic }) => {
         const num = ctx.from;
         try {
-            const resultado = await ReservaCanchaPadel.consultarReservas('numero_telefonico', num);
-            console.log("Reservas: ", resultado);
+            const resultado = await consultarReservas('numero_telefonico', num);
             return await flowDynamic(resultado);
         } catch (error) {
             await flowDynamic(error.message);
         }
     });
 
-const flowConfirmar = addKeyword(['confirmar', 'conf'])
+const flowConfirmar = addKeyword(['confirmar', 'cf'])
     .addAnswer('Ingrese su nombre para confirmar su reserva', 
     { capture: true },
     async (ctx, { flowDynamic, gotoFlow }) => {
         numero = ctx.from;
         try {
-            const resultado = await ReservaCanchaPadel.consultarReservas('numero_telefonico', numero);
+            const resultado = await consultarReservas('numero_telefonico', numero);
             await flowDynamic(resultado);
             if (resultado.includes('No hay reservas para')) {
                 return gotoFlow(flowSubMenu);
@@ -134,10 +131,10 @@ const flowConfirmar = addKeyword(['confirmar', 'conf'])
     async (ctx, { flowDynamic }) => {
         const nId = ctx.body;
         try {
-            const exist = await ReservaCanchaPadel.consultaDoble(numero, nId);
+            const exist = await consultaDoble(numero, nId);
             if (exist) {
                 try {
-                    const resultado = await ReservaCanchaPadel.confirmarReserva(numero, nId);
+                    const resultado = await confirmarReserva(numero, nId);
                     return await flowDynamic(resultado);
                 } catch (error) {
                     await flowDynamic(error.message); }
@@ -147,13 +144,13 @@ const flowConfirmar = addKeyword(['confirmar', 'conf'])
             await flowDynamic(error.message); }
     });
 
-const flowCancelar = addKeyword(['cancelar'])
+const flowCancelar = addKeyword(['cancelar','cn'])
     .addAnswer('Ingrese su nombre para cancelar su reserva', 
     { capture: true },
     async (ctx, { flowDynamic, gotoFlow }) => {
         numero = ctx.from;
         try {
-            const resultado = await ReservaCanchaPadel.consultarReservas('numero_telefonico', numero);
+            const resultado = await consultarReservas('numero_telefonico', numero);
             await flowDynamic(resultado);
             if (resultado.includes('No hay reservas para')) {
                 return gotoFlow(flowSubMenu);
@@ -168,7 +165,7 @@ const flowCancelar = addKeyword(['cancelar'])
     async (ctx, { flowDynamic }) => {
         const nId = ctx.body;
         try {
-            const resultado = await ReservaCanchaPadel.cancelarReserva(numero, nId);
+            const resultado = await cancelarReserva(numero, nId);
             return await flowDynamic(resultado);
         } catch (error) {
             await flowDynamic(error.message);
