@@ -198,7 +198,7 @@ const flowSubMenu = addKeyword(['menu', 'menú'])
     );
 
 const flowMainMenu = addKeyword(['menu', 'menú','opciones'])
-    .addAnswer("🎾 ¡Hola, bienvenido a Colima Padel Club! 🎾")
+    .addAnswer("🎾 ¡Hola, bienvenido a Hi Padel Club! 🎾")
     .addAnswer(mainMenu,
         { delay: 500, capture: true },
         async (ctx, { gotoFlow, fallBack, flowDynamic }) => {
