@@ -205,7 +205,7 @@ const flowCancelar = addKeyword([EVENTS.ACTION, 'ccc'])
         if (exist && !isNaN(response)){
             let nId = response
             try {
-                const x = await deleteFromCalendar(nId); // DFC
+                // await deleteFromCalendar(nId); // DFC
                 const resultado = await cancelarReserva(numero, nId);
                 return await flowDynamic(resultado);
             } catch (error) {
@@ -221,7 +221,7 @@ const flowCancelar = addKeyword([EVENTS.ACTION, 'ccc'])
             }
             let nId = await getID(rowIndex, numero);
             try {
-                const x = await deleteFromCalendar(nId); // DFC
+                // await deleteFromCalendar(nId); // DFC
                 const resultado = await cancelarReserva(numero, nId);
                 return await flowDynamic(resultado);
             } catch (error) {

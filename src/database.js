@@ -144,8 +144,8 @@ async function confirmarReserva(numero_telefonico, id_reserva) {
 
 // Función para cancelar una reserva
 async function cancelarReserva(numero_cliente, id_reserva) {
+    await deleteFromCalendar(id_reserva); // DFC
     return new Promise(async (resolve, reject) => {
-
             const query = 'DELETE FROM reservations WHERE numero_telefonico = ? AND id = ?';
             connection.query(query, [numero_cliente, id_reserva], async (err, result) => {
                 if (err) {
@@ -162,19 +162,15 @@ async function cancelarReserva(numero_cliente, id_reserva) {
 
 // Seleccionar reserva a eliminar
 async function deleteFromCalendar(id_reserva) {
-    return new Promise(async (resolve, reject) => {
         const query2 = 'SELECT * FROM reservations WHERE id = ?';
         connection.query(query2, [id_reserva], async (err, rows) => {
             if (err) {
-                return reject(err);
             }
             if (rows.length > 0) {
                 const { dia, hora, cancha } = rows[0];
                 deleteEvent(dia, hora, cancha);
-                return resolve('Evento eliminado');
             }
         })
-    });
 }
 
 // Función para consultar las reservas de un usuario
