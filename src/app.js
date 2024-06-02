@@ -6,7 +6,7 @@ const BaileysProvider = require('@bot-whatsapp/provider/baileys')
 const MockAdapter = require('@bot-whatsapp/database/mock')
 const { ask } = require('./chatgpt');
 const { reservarCancha, consultaDoble, consultarReservas, confirmarReserva, cancelarReserva, 
-    registerUser, lookupUser, ejecutarQueryGPT, getID } = require('./database');
+    registerUser, lookupUser, deleteFromCalendar, getID } = require('./database');
 const { getTime, getGender } = require('./saludos');
 const { asignarHora, asignarDia, asignarISOdate, asignarCancha, asignarRow } = require('./validacion');
 
@@ -26,7 +26,7 @@ const pathSubMenu = path.join(__dirname, "../messages", "subMenu.txt")
 const subMenu = fs.readFileSync(pathSubMenu, "utf8")
 
 
-let day, date, hour, court, name;
+let day, date, hour, court, name, sinReserva;
 let saveHour = null;
 let nombre = null;
 
@@ -118,21 +118,33 @@ const flowConsultar = addKeyword(EVENTS.ACTION)
         }
     });
 
+const flowSinReserva = addKeyword(EVENTS.ACTION)
+    .addAnswer('No hay reservas a su nombre')
+    .addAnswer('Le gustaría agendar una?', {capture: true},
+    async (ctx, { gotoFlow, flowDynamic }) => {
+        const res = clearText(ctx.body);
+        if (res.includes('si' || 'claro')) {
+            return gotoFlow(flowReservar);
+        } else {
+            return await flowDynamic('Gracias por su visita, que tenga un buen día');
+        }
+    });
+
 // const flowConfirmar = addKeyword(['confirmar', 'cf'])
 const flowConfirmar = addKeyword(EVENTS.ACTION)
     .addAnswer('Ingrese su nombre para confirmar su reserva', 
     { capture: true },
-    async (ctx, { flowDynamic, gotoFlow }) => {
+    async (ctx, { flowDynamic, endFlow, gotoFlow  }) => {
         numero = ctx.from;
         try {
             const resultado = await consultarReservas('numero_telefonico', numero);
-            await flowDynamic(resultado);
-            if (resultado.includes('No hay reservas para')) {
-                return gotoFlow(flowSubMenu);
+            if (resultado.includes('No hay reservas')) {
+                return gotoFlow(flowSinReserva);
             }
+            await flowDynamic(resultado);
         } catch (error) {
             await flowDynamic(error.message);
-            return gotoFlow(flowSubMenu);
+            return endFlow();
         }
     })
     .addAnswer('Escriba el ID de la reserva a confirmar', 
@@ -168,20 +180,20 @@ const flowConfirmar = addKeyword(EVENTS.ACTION)
 
 
 // const flowCancelar = addKeyword(['cancelar','cn'])
-const flowCancelar = addKeyword(EVENTS.ACTION)
+const flowCancelar = addKeyword([EVENTS.ACTION, 'ccc'])
     .addAnswer('Ingrese su nombre para cancelar su reserva', 
     { capture: true },
-    async (ctx, { flowDynamic, gotoFlow }) => {
+    async (ctx, { flowDynamic, endFlow, gotoFlow  }) => {
         numero = ctx.from;
         try {
             const resultado = await consultarReservas('numero_telefonico', numero);
-            await flowDynamic(resultado);
-            if (resultado.includes('No hay reservas para')) {
-                return gotoFlow(flowSubMenu);
+            if (resultado.includes('No hay reservas')) {
+                return gotoFlow(flowSinReserva);
             }
+            await flowDynamic(resultado);
         } catch (error) {
             await flowDynamic(error.message);
-            return gotoFlow(flowSubMenu);
+            return endFlow();
         }
     })
     .addAnswer('¿Qué ID de reserva desea cancelar?', 
@@ -193,6 +205,7 @@ const flowCancelar = addKeyword(EVENTS.ACTION)
         if (exist && !isNaN(response)){
             let nId = response
             try {
+                const x = await deleteFromCalendar(nId); // DFC
                 const resultado = await cancelarReserva(numero, nId);
                 return await flowDynamic(resultado);
             } catch (error) {
@@ -208,6 +221,7 @@ const flowCancelar = addKeyword(EVENTS.ACTION)
             }
             let nId = await getID(rowIndex, numero);
             try {
+                const x = await deleteFromCalendar(nId); // DFC
                 const resultado = await cancelarReserva(numero, nId);
                 return await flowDynamic(resultado);
             } catch (error) {
@@ -249,6 +263,12 @@ const flowMainMenu = addKeyword(['menu', 'menú','opciones'])
                     return await flowDynamic("Av. Arquitecto Pedro Ramírez Vázquez 2014, Cdad. Guzmán.\n\Haz click aquí 👉  https://maps.app.goo.gl/yLx1F5He4BGYhyUK9");
                 case /^4\.?$|mas/.test(res):
                     return gotoFlow(flowSubMenu);
+                case /consult|ver mis/.test(res):
+                    return gotoFlow(flowConsultar);
+                case /confirm/.test(res):
+                    return gotoFlow(flowConfirmar);
+                case /cancel/.test(res):
+                    return gotoFlow(flowCancelar);
             }
         }
     );
@@ -311,7 +331,7 @@ const flowGPT = addKeyword('GPT').addAction(
 const main = async () => {
     const adapterDB = new MockAdapter();
     const adapterProvider = createProvider(BaileysProvider);
-    const adapterFlow = createFlow([flowWelcome, flowMainMenu,flowSubMenu, flowReservar, flowConsultar, flowConfirmar, flowCancelar, flowGracias, flowGPT]);
+    const adapterFlow = createFlow([flowWelcome, flowMainMenu,flowSubMenu, flowReservar, flowConsultar, flowConfirmar, flowCancelar, flowGracias, flowGPT, flowSinReserva]);
 
     createBot({
         flow: adapterFlow,

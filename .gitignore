@@ -4,4 +4,4 @@ node_modules/
 *.log
 botpadel.db
 botpadel.sql
-migration.js
+server.js

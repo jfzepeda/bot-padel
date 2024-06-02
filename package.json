@@ -17,6 +17,8 @@
         "@bot-whatsapp/provider": "latest",
         "@whiskeysockets/baileys": "6.5.0",
         "cache-manager": "5.2.4",
+        "express": "^4.19.2",
+        "googleapis": "^137.1.0",
         "luxon": "^3.4.4",
         "moment": "^2.30.1",
         "mongodb": "^6.5.0",

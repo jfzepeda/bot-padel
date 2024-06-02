@@ -1,5 +1,6 @@
 // database.js
 const { DB_HOST, DB_USER, DB_PASSWORD, DB_PORT, DB_NAME } = require('./config');
+const { createEvent, deleteEvent } = require('./calendar');
 const { reverseISO, asignarRow } = require('./validacion');
 const moment = require('moment');
 const mysql = require('mysql2');
@@ -113,8 +114,8 @@ async function guardarReservaEnDB(nombre_cliente, cancha, dia, hora, confirmada,
                     return reject(new Error("Error al guardar su reserva: " + err.message));
                 }
                 const id_reserva = result.insertId;
-                // const response = [id_reserva, "Reserva creada con éxito!", `📆 Dia: ${reverseISO(dia)} \n🕑 Hora ${hora} \n🥅 Cancha ${cancha} \n🗒️ Confirmada ${confirmada ? '✅' : '❌'} `];
                 const response = [`🔘 ID de reserva: ${id_reserva} \n📆 Dia: ${reverseISO(dia)} \n🕑 Hora ${hora} \n🥅 Cancha ${cancha} \n🗒️ Confirmada ${confirmada ? '✅' : '❌'} `];
+                createEvent(nombre_cliente, dia, hora, cancha);
                 resolve('Reserva creada con éxito! 🎉\n\n' + response);
             });
         } catch (err) {
@@ -159,6 +160,44 @@ async function cancelarReserva(numero_cliente, id_reserva) {
     });
 }
 
+// Seleccionar reserva a eliminar
+async function deleteFromCalendar(id_reserva) {
+    return new Promise(async (resolve, reject) => {
+        const query2 = 'SELECT * FROM reservations WHERE id = ?';
+        connection.query(query2, [id_reserva], async (err, rows) => {
+            if (err) {
+                return reject(err);
+            }
+            if (rows.length > 0) {
+                const { dia, hora, cancha } = rows[0];
+                deleteEvent(dia, hora, cancha);
+                return resolve('Evento eliminado');
+            }
+        })
+    });
+}
+
+// Función para consultar las reservas de un usuario
+function consultarReservas(columna, arg) {
+    return new Promise((resolve, reject) => {
+        const query = `SELECT * FROM reservations WHERE ${columna} = ?`;
+        connection.query(query, [arg], (err, rows) => {
+            if (err) {
+                return reject(err);
+            }
+            if (rows.length > 0) {
+                let response = `Reservaciones para *${rows[0].nombre_cliente}:*\n\n`;
+                rows.forEach((row) => {
+                    response += `🔘 ID de reserva: ${row.id} \n📆 Dia: ${reverseISO(row.dia)} \n🕑 Hora ${row.hora} \n🥅 Cancha ${row.cancha} \n🗒️ Confirmada ${row.confirmada ? '✅' : '❌'} \n\n`;
+                });
+                response = response.trim();
+                resolve(response);
+            } else {
+                resolve('No hay reservas'); // Si no se encuentra el usuario, devuelve undefined
+            }
+        });
+    });
+}
 
 // Función para consultar si hay duplicados
 async function consultaDoble(numero_cliente, id_cliente) {
@@ -177,29 +216,6 @@ async function consultaDoble(numero_cliente, id_cliente) {
     });
 }
 
-
-// Función para consultar las reservas de un usuario
-function consultarReservas(columna, arg) {
-    return new Promise((resolve, reject) => {
-        const query = `SELECT * FROM reservations WHERE ${columna} = ?`;
-        connection.query(query, [arg], (err, rows) => {
-            if (err) {
-                return reject(err);
-            }
-            if (rows.length > 0) {
-                let response = `Reservaciones para *${rows[0].nombre_cliente}:*\n\n`;
-                rows.forEach((row) => {
-                    response += `🔘 ID de reserva: ${row.id} \n📆 Dia: ${reverseISO(row.dia)} \n🕑 Hora ${row.hora} \n🥅 Cancha ${row.cancha} \n🗒️ Confirmada ${row.confirmada ? '✅' : '❌'} \n\n`;
-                });
-                response = response.trim();
-                resolve(response);
-            } else {
-                resolve('No hay reservaciones existentes'); // Si no se encuentra el usuario, devuelve undefined
-            }
-        });
-    });
-}
-
 // Función para manejar la reserva de una cancha
 async function reservarCancha(nombre_cliente, court, day, hour, num) {
     const disponible = await verificarDisponibilidad(court, day, hour);
@@ -212,4 +228,4 @@ async function reservarCancha(nombre_cliente, court, day, hour, num) {
 
 
 module.exports = { reservarCancha, consultaDoble, consultarReservas, confirmarReserva, cancelarReserva, 
-    registerUser, lookupUser, ejecutarQueryGPT, getID };
+    registerUser, lookupUser, deleteFromCalendar, ejecutarQueryGPT, getID };
