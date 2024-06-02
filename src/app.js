@@ -152,29 +152,30 @@ const flowConfirmar = addKeyword(EVENTS.ACTION)
     async (ctx, { flowDynamic, endFlow, fallBack }) => {
         const response = ctx.body;
         const numero = ctx.from;
-        const exist = await consultaDoble(numero, response);
-        if (exist && !isNaN(response)){
-            let nId = response
+        const handleConfirmReserva = async (nId) => {
             try {
                 const resultado = await confirmarReserva(numero, nId);
                 return await flowDynamic(resultado);
             } catch (error) {
-                return await flowDynamic(error.message); }
-        } else if (!exist && !isNaN(response)) {
-            return await flowDynamic('Esa reserva no esta a su nombre');
+                return await flowDynamic(error.message);
+            }
+        };
+        if (!isNaN(response)) {
+            const exist = await consultaDoble(numero, response);
+            if (exist) {
+                return await handleConfirmReserva(response);
+            } else {
+                return await flowDynamic('Esa reserva no esta a su nombre');
+            }
         } else {
             let rowIndex = await asignarRow(response);
-            if (response == '.') {
+            if (response === '.') {
                 rowIndex = 1;
-            } else if (rowIndex ==  null) {
+            } else if (rowIndex === null) {
                 return await flowDynamic('No existe ese ID');
             }
-            let nId = await getID(rowIndex, numero);
-            try {
-                const resultado = await confirmarReserva(numero, nId);
-                return await flowDynamic(resultado);
-            } catch (error) {
-                return await flowDynamic(error.message); }
+            const nId = await getID(rowIndex, numero);
+            return await handleConfirmReserva(nId);
         }
     });
 
@@ -201,31 +202,33 @@ const flowCancelar = addKeyword([EVENTS.ACTION, 'ccc'])
     async (ctx, { flowDynamic, endFlow, fallBack }) => {
         const response = ctx.body;
         const numero = ctx.from;
-        const exist = await consultaDoble(numero, response);
-        if (exist && !isNaN(response)){
-            let nId = response
+        const handleCancelReserva = async (nId) => {
             try {
                 const resultado = await cancelarReserva(numero, nId);
                 return await flowDynamic(resultado);
             } catch (error) {
-                return await flowDynamic(error.message); }
-        } else if (!exist && !isNaN(response)) {
-            return await flowDynamic('Esa reserva no esta a su nombre');
+                return await flowDynamic(error.message);
+            }
+        };
+        if (!isNaN(response)) {
+            const exist = await consultaDoble(numero, response);
+            if (exist) {
+                return await handleCancelReserva(response);
+            } else {
+                return await flowDynamic('Esa reserva no esta a su nombre');
+            }
         } else {
             let rowIndex = await asignarRow(response);
-            if (response == '.') {
+            if (response === '.') {
                 rowIndex = 1;
-            } else if (rowIndex ==  null) {
+            } else if (rowIndex === null) {
                 return await flowDynamic('No existe ese ID');
             }
-            let nId = await getID(rowIndex, numero);
-            try {
-                const resultado = await cancelarReserva(numero, nId);
-                return await flowDynamic(resultado);
-            } catch (error) {
-                return await flowDynamic(error.message); }
+            const nId = await getID(rowIndex, numero);
+            return await handleCancelReserva(nId);
         }
     });
+    
 
 const flowSubMenu = addKeyword(EVENTS.ACTION)
     .addAnswer( subMenu,

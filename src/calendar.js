@@ -53,7 +53,7 @@ async function createEventCal(sum, startDateTime, court) {
       calendarId: court,
       resource: event,
     });
-    console.log('Event created: %s', response.data.htmlLink);
+    console.log('Event created');
   } catch (error) {
     console.error('Error creating event:', error);
   }
