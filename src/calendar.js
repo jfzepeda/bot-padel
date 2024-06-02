@@ -32,12 +32,12 @@ async function getEvents() {
   }
 }
 
-async function createEventCal(name, startDateTime, court) {
+async function createEventCal(sum, startDateTime, court) {
   // const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
   const endDateTime = new Date(new Date(startDateTime).getTime() + 60 * 60000).toISOString();
 
   const event = {
-    summary: name,
+    summary: sum,
     start: {
       dateTime: startDateTime,
       timeZone: 'America/Los_Angeles',
@@ -92,10 +92,11 @@ const calendario = {
 }
 
 
-function createEvent(nombre_cliente, fechaObj, hora, cancha) {
+function createEvent(nombre_cliente, fechaObj, hora, cancha, id) {
   let fechaStr = fechaObj.toString();
   const fechaISO = `${fechaStr}T${hora}:00-06:00`;
-  createEventCal(nombre_cliente, fechaISO, calendario[cancha]);
+  const sum = `${nombre_cliente} - ID: ${id}`;
+  createEventCal(sum, fechaISO, calendario[cancha]);
 }
 
 function deleteEvent(fechaObj, hora, cancha) {

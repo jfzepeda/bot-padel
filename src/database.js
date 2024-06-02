@@ -115,7 +115,7 @@ async function guardarReservaEnDB(nombre_cliente, cancha, dia, hora, confirmada,
                 }
                 const id_reserva = result.insertId;
                 const response = [`🔘 ID de reserva: ${id_reserva} \n📆 Dia: ${reverseISO(dia)} \n🕑 Hora ${hora} \n🥅 Cancha ${cancha} \n🗒️ Confirmada ${confirmada ? '✅' : '❌'} `];
-                createEvent(nombre_cliente, dia, hora, cancha);
+                createEvent(nombre_cliente, dia, hora, cancha, id_reserva);
                 resolve('Reserva creada con éxito! 🎉\n\n' + response);
             });
         } catch (err) {
