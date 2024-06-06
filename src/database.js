@@ -1,6 +1,6 @@
 // database.js
 const { DB_HOST, DB_USER, DB_PASSWORD, DB_PORT, DB_NAME } = require('./config');
-const { createEvent, deleteEvent } = require('./calendar');
+const { createEvent, deleteEvent, getAvailable } = require('./calendar');
 const { reverseISO, asignarRow } = require('./validacion');
 const moment = require('moment');
 const mysql = require('mysql2');
@@ -60,6 +60,7 @@ async function ejecutarQueryGPT(mensaje) {
             if (err) {
                 reject(new Error('Error al ejecutar la consulta: ' + err.message));
             } else {
+                // console.log(rows)
                 resolve(rows);
             }
         });
@@ -114,8 +115,9 @@ async function guardarReservaEnDB(nombre_cliente, cancha, dia, hora, confirmada,
                     return reject(new Error("Error al guardar su reserva: " + err.message));
                 }
                 const id_reserva = result.insertId;
-                const response = [`🔘 ID de reserva: ${id_reserva} \n📆 Dia: ${reverseISO(dia)} \n🕑 Hora ${hora} \n🥅 Cancha ${cancha} \n🗒️ Confirmada ${confirmada ? '✅' : '❌'} `];
+                const response = [`🗒️ ID de reserva: ${id_reserva} \n📆 Dia: ${reverseISO(dia)} \n⏰ Hora ${hora} \n🎾 Cancha ${cancha} \n${confirmada ? '✅' : '❌'} Confirmada: ${confirmada ? 'Si' : 'No'}`];
                 createEvent(nombre_cliente, dia, hora, cancha, id_reserva);
+                console.log('Reserva creada')
                 resolve('Reserva creada con éxito! 🎉\n\n' + response);
             });
         } catch (err) {
@@ -218,7 +220,8 @@ async function reservarCancha(nombre_cliente, court, day, hour, num) {
     if (disponible) {
         return await guardarReservaEnDB(nombre_cliente, court, day, hour, false, num);
     } else {
-        throw new Error('Cancha no disponible, seleccione otro horario');
+        const horariosDisponibles = await getAvailable(day, court);
+        return ('Lo sentimos no tenemos disponible esa hora:\n\n' + horariosDisponibles);
     }
 }
 

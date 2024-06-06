@@ -4,6 +4,7 @@ require("dotenv").config
 const QRPortalWeb = require('@bot-whatsapp/portal')
 const BaileysProvider = require('@bot-whatsapp/provider/baileys')
 const MockAdapter = require('@bot-whatsapp/database/mock')
+const { getAvailableHours, getAvailableCourt } = require('./calendar');
 const { ask } = require('./chatgpt');
 const { reservarCancha, consultaDoble, consultarReservas, confirmarReserva, cancelarReserva, 
     registerUser, lookupUser, deleteFromCalendar, getID } = require('./database');
@@ -26,7 +27,7 @@ const pathSubMenu = path.join(__dirname, "../messages", "subMenu.txt")
 const subMenu = fs.readFileSync(pathSubMenu, "utf8")
 
 
-let day, date, hour, court, name, sinReserva;
+let date, hour, court, canchas, name, sinReserva;
 let saveHour = null;
 let nombre = null;
 
@@ -62,43 +63,54 @@ const flowGracias = addKeyword('gracias', 'gracais', 'grax', 'agradezco')
 const flowReservar = addKeyword(EVENTS.ACTION)
     .addAnswer('Para qué día quiere reservar?', 
     { capture: true },
-    async (ctx, { endFlow, flowDynamic, fallBack }) => {
-        day = asignarDia(ctx.body);
-        if (day.includes('válido')) { 
-            return fallBack(day); 
-        }
-        date = asignarISOdate(day);
+    async (ctx, { flowDynamic, fallBack }) => {
+        date = asignarDia(ctx.body);
+        if (date.includes('válido')) { 
+            return fallBack(date); }
+
+        const horarios = await getAvailableHours(date)
+        if (horarios.includes('ocupados')) { 
+            return fallBack(horarios); }
+
+        return await flowDynamic(horarios)
     })
-    .addAnswer('A qué hora sería? (6:00 - 22:00 hrs)', 
+    .addAnswer('A qué hora sería?', 
     { capture: true },
-    async (ctx, { fallBack }) => {
+    async (ctx, { fallBack, flowDynamic }) => {
         let input = clearText(ctx.body);
-        if (saveHour !== null) {
+        if (saveHour !== null) { 
             input = saveHour + ' ' + input; 
         }
+        
         hour = asignarHora(input);
-        if (hour === "Ingresa una hora válida por favor") {
-            return fallBack(hour);
-        } else if (hour === 'AM o PM?') {
-            saveHour = input;
-            return fallBack(hour);
+        if (hour.includes("válida")) { 
+            return fallBack(hour); 
+        } else if (hour === 'AM o PM?') { 
+            saveHour = input; return fallBack(hour); 
         }
+
+        canchas = await getAvailableCourt(date, hour);
+        return await flowDynamic(canchas)
     })
-    .addAnswer('Cuál cancha prefieres? [1-4]', 
-    { capture: true },
-    async (ctx, { fallBack }) => {
+    .addAction( { capture: true },  // CANCHA
+    async (ctx, { fallBack, endFlow }) => {
         const input = clearText(ctx.body);
-        court = asignarCancha(input);
-        if (court == "Elige una cancha valida") {
+        court = asignarCancha(input, canchas);
+        console.log(court)
+
+        if (court.includes('problema')) { 
+            return endFlow(court); 
+        } else if (court.length > 1) { 
             return fallBack(court);
         }
     })
-    .addAction( async (ctx, { flowDynamic }) => {
+    .addAction( async (ctx, { flowDynamic }) => { // QUERY
         const num = ctx.from;
         court = parseInt(court);
         nombre = await lookupUser(num);
+
         try {
-            const resultado = await reservarCancha(nombre, court, date, hour, num);
+            let resultado = await reservarCancha(nombre, court, date, hour, num);
             return await flowDynamic(resultado);
         } catch (error) {
             await flowDynamic(error.message);
@@ -110,12 +122,12 @@ const flowConsultar = addKeyword(EVENTS.ACTION)
     .addAnswer('Buscando sus reservas...', {capture: false},
     async (ctx, { gotoFlow, flowDynamic }) => {
         const num = ctx.from;
-        try {
-            const resultado = await consultarReservas('numero_telefonico', num);
-            return await flowDynamic(resultado);
-        } catch (error) {
-            await flowDynamic(error.message);
+        const resultado = await consultarReservas('numero_telefonico', num);
+
+        if (resultado.includes('No hay reservas')) {
+            return gotoFlow(flowSinReserva);
         }
+        return await flowDynamic(resultado);
     });
 
 const flowSinReserva = addKeyword(EVENTS.ACTION)
@@ -197,7 +209,7 @@ const flowCancelar = addKeyword([EVENTS.ACTION, 'ccc'])
             return endFlow();
         }
     })
-    .addAnswer('¿Qué ID de reserva desea cancelar?', 
+    .addAnswer('Escriba el ID de reserva desea cancelar?', 
     { capture: true },
     async (ctx, { flowDynamic, endFlow, fallBack }) => {
         const response = ctx.body;
@@ -232,7 +244,7 @@ const flowCancelar = addKeyword([EVENTS.ACTION, 'ccc'])
 
 const flowSubMenu = addKeyword(EVENTS.ACTION)
     .addAnswer( subMenu,
-    { delay: 500, capture: true },
+    { delay: 300, capture: true },
     async (ctx, { gotoFlow, fallBack, flowDynamic }) => {
         let res = clearText(ctx.body);
         switch (true) {
@@ -252,7 +264,7 @@ const flowSubMenu = addKeyword(EVENTS.ACTION)
 
 const flowMainMenu = addKeyword(['menu', 'menú','opciones'])
     .addAnswer(mainMenu,
-        { delay: 500, capture: true },
+        { delay: 300, capture: true },
         async (ctx, { gotoFlow, fallBack, flowDynamic }) => {
             let res = clearText(ctx.body);
             switch (true) {

@@ -73,7 +73,7 @@ function asignarDia(dateProvided) {
         const mes = convertirMesANombre(fechaMasProxima.month)
         const fecha = (dia + ' de ' + mes);
         // console.log(fecha)
-        return fecha
+        return asignarISOdate(fecha)
           
     } else {
         const patronDia = /\b-?\d+\b/g;
@@ -82,7 +82,7 @@ function asignarDia(dateProvided) {
         // console.log('Utilizando match day')
         
         if (day < 1 || day > 31) {
-            return "Ooops ese día parece no estar en nuestro calendario, ingresa un día válido por favor";
+            return "Ooops ese día parece no existir en nuestro calendario, ingresa un día válido por favor";
         }
         
         const patronMes = /\b(enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre)\b/gi;
@@ -103,18 +103,18 @@ function asignarDia(dateProvided) {
             // Construir la fecha resultante
             let mes = convertirMesANombre(mesResultante)
             let fechaResultante = (day + ' de ' + mes);
-            return fechaResultante;
+            return asignarISOdate(fechaResultante);
         } else {
             let fechaResultante = (day + ' de ' + monthMatch)
-            return fechaResultante;
+            return asignarISOdate(fechaResultante);
         }
 
     }
 }
 
-// CONVERTIR DIA A FECHA ////////////////////////////////
-// CONVERTIR DIA A FECHA ////////////////////////////////
-// CONVERTIR DIA A FECHA ////////////////////////////////
+// CONVERTIR A FORMATO ISO ////////////////////////////////
+// CONVERTIR A FORMATO ISO ////////////////////////////////
+// CONVERTIR A FORMATO ISO ////////////////////////////////
 function asignarISOdate(fechaStr) {
     const meses = {
         "enero": "01",
@@ -262,22 +262,40 @@ function asignarHora(hora) {
     }
 }
 
-// console.log(asignarHora('A las 6'))
+// VALIDACION DE MESA ////////////////////////////////
+// VALIDACION DE MESA ////////////////////////////////
+// VALIDACION DE MESA ////////////////////////////////
+function asignarCancha(input, canchasDisponibles) {
+    input = clearText(input);
+    if (input.includes('no')) { return 'No hay problema, que tenga buen día';}
 
-// VALIDACION DE MESA ////////////////////////////////
-// VALIDACION DE MESA ////////////////////////////////
-// VALIDACION DE MESA ////////////////////////////////
-function asignarCancha(cancha) {
-    const canchasPosibles = /\b(1|2|3|4)\b/gi;
-    let coincidencia = cancha.match(canchasPosibles);
-    
-    if (coincidencia == null) {
-        return "Elige una cancha valida";
+    const canchasExistentes = /\b(1|2|3|4)\b/gi;
+    let cancha;
+    let message;
+
+    if (input.includes('si')) {
+        cancha = canchasDisponibles[0].match(canchasExistentes);
     } else {
-        coincidencia = coincidencia.toString();
-        return coincidencia;
+        cancha = input.match(canchasExistentes); 
+        // canchasDisponibles = canchasDisponibles[0].match(cancha);
+        canchasDisponibles = canchasDisponibles[0].match(cancha);
+        if (canchasDisponibles == null) {
+            return "Por favor seleccione una chancha de las que tenemos disponibles"
+        }
+    }
+    
+    if (cancha == null) {
+        return "Elige una cancha válida";
+    } else {
+        cancha = cancha.toString();
+        return cancha;
     }    
 }
+
+// const x = asignarCancha('la 1', ['Tenemos libres las canchas  1 y 4']);
+// console.log(x.length > 1)
+// console.log(x);
+
 
 // VALIDACION DE ID ////////////////////////////////
 // VALIDACION DE ID ////////////////////////////////
@@ -294,7 +312,7 @@ function asignarRow(frase) {
         "octav": 8,
         "noven": 9,
         "decim": 10,
-        // "utim": rows.length          FUTURE IMPLEMENTATION
+        // "utim": rows.length-1        //  FUTURE IMPLEMENTATION
     };
 
     frase = clearText(frase);
