@@ -1,17 +1,17 @@
 // database.js
-const { DB_HOST, DB_USER, DB_PASSWORD, DB_PORT, DB_NAME } = require('./config');
 const { createEvent, deleteEvent, getAvailable } = require('./calendar');
 const { reverseISO, asignarRow } = require('./validacion');
 const moment = require('moment');
 const mysql = require('mysql2');
+require('dotenv').config();
 
 // Configuración de la conexión a la base de datos MySQL
 const connection = mysql.createConnection({
-    user: DB_USER,
-    password: DB_PASSWORD,
-    host: DB_HOST,
-    port: DB_PORT,
-    database: DB_NAME
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    host: process.env.DB_HOST,
+    port: process.env.DB_PORT,
+    database: process.env.DB_NAME
 });
 
 // Conectar a la base de datos
@@ -186,7 +186,7 @@ function consultarReservas(columna, arg) {
             if (rows.length > 0) {
                 let response = `Reservaciones para *${rows[0].nombre_cliente}:*\n\n`;
                 rows.forEach((row) => {
-                    response += `🔘 ID de reserva: ${row.id} \n📆 Dia: ${reverseISO(row.dia)} \n🕑 Hora ${row.hora} \n🥅 Cancha ${row.cancha} \n🗒️ Confirmada ${row.confirmada ? '✅' : '❌'} \n\n`;
+                    response = `🗒️ ID de reserva: ${id_reserva} \n📆 Dia: ${reverseISO(dia)} \n⏰ Hora ${hora} \n🎾 Cancha ${cancha} \n${confirmada ? '✅' : '❌'} Confirmada: ${confirmada ? 'Si' : 'No'} \n\n`;
                 });
                 response = response.trim();
                 resolve(response);
