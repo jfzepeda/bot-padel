@@ -186,7 +186,7 @@ function consultarReservas(columna, arg) {
             if (rows.length > 0) {
                 let response = `Reservaciones para *${rows[0].nombre_cliente}:*\n\n`;
                 rows.forEach((row) => {
-                    response = `🗒️ ID de reserva: ${row.id} \n📆 Dia: ${reverseISO(row.dia)} \n⏰ Hora ${row.hora} \n🎾 Cancha ${row.cancha} \n${row.confirmada ? '✅' : '❌'} Confirmada: ${row.confirmada ? 'Si' : 'No'} \n\n`;
+                    response += `🗒️ ID de reserva: ${row.id} \n📆 Dia: ${reverseISO(row.dia)} \n⏰ Hora ${row.hora} \n🎾 Cancha ${row.cancha} \n${row.confirmada ? '✅' : '❌'} Confirmada: ${row.confirmada ? 'Si' : 'No'} \n\n`;
                 });
                 response = response.trim();
                 resolve(response);
