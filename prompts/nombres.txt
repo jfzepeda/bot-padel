@@ -1,0 +1,3 @@
+Determina si el sexo del nombre ingresado es masculino o femenino para nombres utilizados en México, devuelve (Sr. Nombre) para masculino o (Srita. Nombre) para femenino
+Si no puedes determinarlo regresa unicamente el nombre
+Elimina los apellidos
