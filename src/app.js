@@ -21,7 +21,7 @@ const pathRedes = path.join(__dirname, "../messages", "redes.txt")
 const redes = fs.readFileSync(pathRedes, "utf8")
 
 const pathServ = path.join(__dirname, "../messages", "servicios.txt")
-const serv = fs.readFileSync(pathServ, "utf8")
+const servicios = fs.readFileSync(pathServ, "utf8")
 
 const pathSubMenu = path.join(__dirname, "../messages", "subMenu.txt")
 const subMenu = fs.readFileSync(pathSubMenu, "utf8")
@@ -144,8 +144,7 @@ const flowSinReserva = addKeyword(EVENTS.ACTION)
 
 // const flowConfirmar = addKeyword(['confirmar', 'cf'])
 const flowConfirmar = addKeyword(EVENTS.ACTION)
-    .addAnswer('Ingrese su nombre para confirmar su reserva', 
-    { capture: true },
+    .addAction(
     async (ctx, { flowDynamic, endFlow, gotoFlow  }) => {
         numero = ctx.from;
         try {
@@ -194,8 +193,7 @@ const flowConfirmar = addKeyword(EVENTS.ACTION)
 
 // const flowCancelar = addKeyword(['cancelar','cn'])
 const flowCancelar = addKeyword([EVENTS.ACTION, 'ccc'])
-    .addAnswer('Ingrese su nombre para cancelar su reserva', 
-    { capture: true },
+    .addAction( 
     async (ctx, { flowDynamic, endFlow, gotoFlow  }) => {
         numero = ctx.from;
         try {
@@ -262,6 +260,11 @@ const flowSubMenu = addKeyword(EVENTS.ACTION)
         }
     });
 
+const flowServicios = addKeyword('SERV$')
+.addAnswer(servicios, {
+    media: 'https://scontent-qro1-2.cdninstagram.com/v/t39.30808-6/435724910_122137353800147363_4654124080440009161_n.jpg?stp=dst-jpg_e35_s1080x1080_sh0.08&_nc_ht=scontent-qro1-2.cdninstagram.com&_nc_cat=111&_nc_ohc=aMwz5YGCZDEQ7kNvgH_5KWb&edm=ANTKIIoAAAAA&ccb=7-5&oh=00_AYDSk6BVndEOonfwMVm1m4cXWDQcvoakMVm7xV519wv-mg&oe=667BD9B8&_nc_sid=cf751bhttps://i.imgur.com/0HpzsEm.png',
+})
+
 const flowMainMenu = addKeyword(['menu', 'menú','opciones'])
     .addAnswer(mainMenu,
         { delay: 300, capture: true },
@@ -271,7 +274,7 @@ const flowMainMenu = addKeyword(['menu', 'menú','opciones'])
                 case /^1\.?$|reser|agenda/.test(res):
                     return gotoFlow(flowReservar);
                 case /^2\.?$|serv/.test(res):
-                    return await flowDynamic(serv);
+                    return gotoFlow(flowServicios);
                 case /^3\.?$|ubic|estamos|donde/.test(res):
                     return await flowDynamic("Av. Arquitecto Pedro Ramírez Vázquez 2014, Cdad. Guzmán.\n\Haz click aquí 👉  https://maps.app.goo.gl/yLx1F5He4BGYhyUK9");
                 case /^4\.?$|mas/.test(res):
@@ -331,6 +334,8 @@ const flowGPT = addKeyword('GPT').addAction(
                 return gotoFlow(flowMainMenu);
             case resGPT == 'flowSubMenu':
                 return gotoFlow(flowSubMenu);
+            case resGPT == 'flowServicios':
+                return gotoFlow(flowServicios);
             case resGPT == 'flowGracias':
                 return gotoFlow(flowGracias);
             case resGPT == 'NO ENTIENDO':
@@ -344,7 +349,7 @@ const flowGPT = addKeyword('GPT').addAction(
 const main = async () => {
     const adapterDB = new MockAdapter();
     const adapterProvider = createProvider(BaileysProvider);
-    const adapterFlow = createFlow([flowWelcome, flowMainMenu,flowSubMenu, flowReservar, flowConsultar, flowConfirmar, flowCancelar, flowGracias, flowGPT, flowSinReserva]);
+    const adapterFlow = createFlow([flowWelcome, flowMainMenu,flowSubMenu, flowReservar, flowConsultar, flowConfirmar, flowCancelar, flowGracias, flowGPT, flowSinReserva, flowServicios]);
 
     createBot({
         flow: adapterFlow,

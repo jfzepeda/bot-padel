@@ -19,6 +19,9 @@ flowConfirmar :
 flowCancelar :
    - Acción: Cancela una reserva del usuario ya existente si los datos son correctos.
 
+flowServicios :
+   - Acción: Muestra los servicios que se tienen disponibles para el cliente, como clases, snacks y articulos en venta.
+
 flowGracias :
    - Acción: El usuario ya no requiere hacer nada y agradece.
 
