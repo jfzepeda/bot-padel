@@ -306,7 +306,7 @@ const flowWelcome = addKeyword([EVENTS.WELCOME])
         async (ctx, {flowDynamic, gotoFlow}) => {
             let res = ctx.body
             let telefono = ctx.from;
-            nombre = await getGender(res)
+            nombre = await ask(ctx.body, 'nombres');
             registerUser(telefono, nombre)
             await flowDynamic([`Gracias ${nombre}!`, 'En qué podemos servirle? 😊'])
             return gotoFlow(flowGPT);

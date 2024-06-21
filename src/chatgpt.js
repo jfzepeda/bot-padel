@@ -12,20 +12,16 @@ const openai = new OpenAI({
 async function getDirectory(aciton) {
   // crea un diccionario de mensajes
   const diccMensajes = {
-    "confirmar": "confirmar.txt",
     "info": "info.txt",
     "nav": "nav.txt",
-    "prompt": "prompt.txt",
     "querys": "querys.txt",
-    "reserva": "reserva.txt",
+    "nombres": "nombres.txt",
   }
   const pathPrompt = path.join(__dirname, "../prompts", diccMensajes[aciton])
   let file = fs.readFileSync(pathPrompt, "utf8")
   return file
   
 }
-
-ask('Caunto mide la torre Eiffel?', 'prompt')
 
 // async function ask(messaje) {
 async function ask(messaje, file) {

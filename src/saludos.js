@@ -1,4 +1,5 @@
 const { getNextPreKeys } = require('@whiskeysockets/baileys');
+const { ask } = require('./chatgpt');
 
 const dotenv = require('dotenv');
 dotenv.config();
